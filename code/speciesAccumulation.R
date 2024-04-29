@@ -1,11 +1,18 @@
-library("neonUtilities")
+#### Users must define their own paths
+
+# datapath<-"user defined path"
+# codepath<-"user defined path"
+
+# User should remove below
+source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
+
+
+# Load some necessary packages
 library("ggplot2")
 library("dplyr")
 
-path <-"/Users/kelsey/Library/CloudStorage/GoogleDrive-kmyule@asu.edu/My Drive/NEON Biorepository/Manuscripts/Species Accumulation/"
-
-# add taxonomy table
-taxa<-read.csv(paste0(path,"CarabidTaxonomicList.csv"))
+# load NEON taxonomy table
+taxa<-read.csv(paste0(datapath,"CarabidTaxonomicList_March2024.csv"))
 
 #Neon_Token is what speeds up the data downloads (API token); NeonData is a full download of the NEON data
 #the DpID is the carabid pitfall data
