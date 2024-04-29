@@ -1,7 +1,0 @@
-# Configuration file that is used to store my private path and NEON key
-
-
-datapath <- "/Users/kelsey/Github/neon-species-accumulation/data/"
-codepath <- "/Users/kelsey/Github/neon-species-accumulation/code/"
-
-Neon_Token <- "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJhdWQiOiJodHRwczovL2RhdGEubmVvbnNjaWVuY2Uub3JnL2FwaS92MC8iLCJzdWIiOiJhbGNsYXVzQGFzdS5lZHUiLCJzY29wZSI6InJhdGU6cHVibGljIiwiaXNzIjoiaHR0cHM6Ly9kYXRhLm5lb25zY2llbmNlLm9yZy8iLCJleHAiOjE4NTk1NjA2MjYsImlhdCI6MTcwMTg4MDYyNiwiZW1haWwiOiJhbGNsYXVzQGFzdS5lZHUifQ.2KsLvpDqZH4jJM0FD9OC2rHqB6ADcWMg2wnSImWIGGjB2v3gVD1d_H4x71LcScWhZepGLW2hIy_NeWcudH6kOw"
