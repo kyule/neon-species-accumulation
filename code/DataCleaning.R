@@ -72,13 +72,14 @@ for (i in 1:length(subsToUpdate)){
 }
 
 # Replace NAs in individualCount with 0s
-fullData<-main[,-c("individualCount")] # replace to not risk losing what took a long time to run :)
-fullData$individualCount[is.na(fullData$individualCount)]<-0
+fullData<-main[ , !(names(main) %in% "individualCount")] # replace to not risk losing what took a long time to run :)
 fullData$individualCountFinal[is.na(fullData$individualCountFinal)]<-0
 
 # Replace subspecies with species level ID in the taxa table
 taxa$sciName<-taxa$scientificName
-taxa$sciName[which(taxa$taxonRank=="subspecies")]<-word(taxa$sciName, 1,2, sep=" ")
+taxa$sciName[which(taxa$taxonRank=="subspecies")]<-word(taxa$sciName[which(taxa$taxonRank=="subspecies")], 1,2, sep=" ")
+taxa$sciName<-str_replace(taxa$sciName," sp.","")
+taxa$sciName<-str_replace(taxa$sciName," spp.","")
 
 # Join main and taxonomy tables & Subset taxonomy table to fields of interest, removes subspecies
 fullData<-left_join(fullData,
@@ -86,23 +87,27 @@ fullData<-left_join(fullData,
                 join_by("taxonID"=="taxonID"))
 
 # Drop all instances in which identification was not Carabid or was only to the family level
-fullData<-fullData[which(fullData$family=="Carabidae"),]
-fullData<-fullData[-which(fullData$sciName %in% c("Carabidae sp.","Carabidae spp.")),]
+fullData<-fullData[which(fullData$family %in% c(NA,"Carabidae")),]
+fullData<-fullData[-which(fullData$sciName %in% c("Carabidae","Carabidae")),]
 
 
+##### Sampling effort by year,site,nlcdclass
 
-##### Sampling effort
-
-sort<-sort[which(sort$sampleType %in% c("carabid","other carabid")),]
-sort$year<-format(as.Date(sort$collectDate),'%Y')
-sort<-left_join(sort,field,join_by("sampleID"=="sampleID"))
-indivsEffort<-data.frame(sort %>% 
-                           group_by(siteID.x,nlcdClass,year.x) %>% 
-                           summarise(indivs=sum(individualCount)))
-
-
-
-#Make a table of trapping days x siteHabitat x year
+# Table by number of individuals
 fullData$year<-format(as.Date(fullData$collectDate),'%Y')
+effort<-data.frame(fullData %>% 
+                           group_by(siteID,nlcdClass,year) %>% 
+                           summarise(indivs=sum(individualCountFinal)))
+
+# Table of trapping days x siteHabitat x year
 dhy_effort<-fullData[which(duplicated(fullData$sampleID)==FALSE),]
+dhy_effort$trapDay<-as.numeric(as.Date(dhy_effort$collectDate) - as.Date(dhy_effort$setDate))
+daysEffort<-data.frame(dhy_effort %>%
+                         group_by(siteID,nlcdClass,year) %>%
+                         summarise(days=sum(trapDay)))
+
+# Get individuals and days together
+effort<-full_join(effort,daysEffort,join_by("siteID"=="siteID","nlcdClass"=="nlcdClass","year"=="year"))
+
+#
 
