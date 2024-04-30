@@ -23,9 +23,6 @@ library("dplyr")
 if(NewCleanData==TRUE|file.exists(paste0(datapath,"CleanedData.Robj"))==FALSE){
   source(paste0(codepath,"DataCleaning.R"))}else{load(file=paste0(datapath,"CleanedData.Robj"))}
 
-# Sampling effort data
-
-source(paste0(codepath,"SampleEffort.R"))
 
 # Select tables
 
