@@ -8,9 +8,7 @@
 # codepath<-"user defined path"
 # Neon_Token<-"user's token"
 
-
-
-#### And users should define their variables
+#### And users should define their variables for the NEON data download
 
 # data product of interest, below is for Carabids
 product<-"DP1.10022.001"
@@ -22,9 +20,6 @@ end<-"2024-04"
 # sites, concatenated list of siteCodes or use "all" for all sites
 sites<-"all"
 
-# load data if the file exists rather than doing a new download? "FALSE" value rewrites data with new download
-load<-TRUE
-
 # And user should remove below
 source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
 
@@ -35,7 +30,6 @@ library(neonUtilities)
 
 
 # Use loadByProduct to download the data
-if (load==FALSE|file.exists(paste0(datapath,"NeonData.Robj"))==FALSE){
   NeonData<-loadByProduct(dpID=product,
                           site=sites,
                           startdate=start,
@@ -44,6 +38,3 @@ if (load==FALSE|file.exists(paste0(datapath,"NeonData.Robj"))==FALSE){
                           check.size=FALSE, 
                           include.provisional=TRUE)
   save(NeonData, file=paste0(datapath,"NeonData.Robj"))
-} else{ 
-  load(file=paste0(datapath,"NeonData.Robj"))
-}

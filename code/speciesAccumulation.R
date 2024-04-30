@@ -6,8 +6,9 @@
 # datapath<-"user defined path"
 # codepath<-"user defined path"
 
-# Users need to indicate whether they want to load or re-download and format the NEON data -- each of these steps is very time consuming so it is recommended that these steps are only done once
-NewData<-FALSE
+# Users need to indicate whether they want to load or re-download and format the NEON data 
+# These these steps are very time consuming so it is recommended that they are only done if necessary
+NewCleanData<-FALSE
 
 # And users should remove below line that loads in personal paths
 source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
@@ -16,9 +17,10 @@ source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
 library("ggplot2")
 library("dplyr")
 
-# Load in the formatted clean data, or download and create it. Make sure both DataCleaning.R and SampleEffort.R are correctly configured
+# Load in the formatted clean data, or download and create it. 
+#Make sure both DataCleaning.R and SampleEffort.R are correctly configured
 
-if(NewData==TRUE|file.exists(paste0(datapath,"CleanedData.Robj"))==FALSE){
+if(NewCleanData==TRUE|file.exists(paste0(datapath,"CleanedData.Robj"))==FALSE){
   source(paste0(codepath,"DataCleaning.R"))}
 else{load(file=paste0(datapath,"CleanedData.Robj")}
 

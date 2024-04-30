@@ -13,14 +13,17 @@ NewData<-FALSE
 # And users should remove below line that loads in personal paths
 source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
 
+# load necessary libraries
+library(dplyr)
+library(stringr)
+
 # load NEON carabid taxonomy table
 taxa<-read.csv(paste0(datapath,"CarabidTaxonomicList_March2024.csv"))
 
 # Load or download the NEON observation data
-if (NewData==TRUE|file.exists(paste0(datapath,"NeonData.Robj"))==FALSE){
+if(NewData==TRUE|file.exists(paste0(datapath,"NeonData.Robj"))==FALSE){
   source(paste0(codepath,"DownloadNEONData.R"))
-  }
-else {load(file=paste0(datapath,"NeonData.Robj"))}
+  }else{load(file=paste0(datapath,"NeonData.Robj"))}
 
 # Pull tables of interest
 field<-NeonData$bet_fielddata
@@ -52,13 +55,15 @@ pinned$taxonID<-pinned$taxonID.expert
 pinned$taxonID[is.na(pinned$taxonID)]<-pinned$taxonID.para[is.na(pinned$taxonID)]
 
 # Create records for the pinned individuals in the main table
+#### This is messing it up because it's renaming all of the records
 for (i in 1:nrow(pinned)){
   row<-which(main$subsampleID==pinned$subsampleID[i])
   main$individualCount[row]<-main$individualCount[row]-1
-  newrecord<-main[row,]
-  newrecord$individualCount<-1
-  newrecord$taxonID<-pinned$taxonID[i]
-  main<-rbind(main,newrecord)
+  newrecords<-main[row,]
+  newrecords$individualCount<-1
+  newrecords$taxonID<-pinned$taxonID[i]
+  main<-rbind(main,newrecords)
+  print(paste(i,nrow(newrecords)))
 }
 
 # Replace subspecies with species level ID in the taxa table
@@ -74,5 +79,18 @@ fullData<-left_join(main,
 fullData<-fullData[which(fullData$family=="Carabidae"),]
 fullData<-fullData[-which(fullData$sciName %in% ("Carabidae sp.","Carabidae spp.")),]
 
+# Sampling effort
 
+sort<-sort[which(sort$sampleType %in% c("carabid","other carabid")),]
+sort$year<-format(as.Date(sort$collectDate),'%Y')
+sort<-left_join(sort,field,join_by("sampleID"=="sampleID"))
+indivsEffort<-data.frame(sort %>% 
+                           group_by(siteID.x,nlcdClass,year.x) %>% 
+                           summarise(indivs=sum(individualCount)))
+
+
+
+#Make a table of trapping days x siteHabitat x year
+fullData$year<-format(as.Date(fullData$collectDate),'%Y')
+dhy_effort<-fullData[which(duplicated(fullData$sampleID)==FALSE),]
 
