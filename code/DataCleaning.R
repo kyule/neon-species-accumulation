@@ -23,27 +23,38 @@ sort<-NeonData$bet_sorting
 para<-NeonData$bet_parataxonomistID
 expert<-NeonData$bet_expertTaxonomistIDProcessed
 
+
+#  Subset field to whether sample was collected to start main analysis file
+main<-field[which(field$sampleCollected=="Y"),]
+
+#subset to columnns of interest
+main<-main[,c("plotID","siteID","nlcdClass","setDate","collectDate","sampleID")]
+
+#Subset sort table to carabids, columns of interest and join to field table
+main<-left_join(main,
+                sort[which(sort$sampleType %in% c("other carabid","carabid")),c("sampleID","subsampleID","taxonID","individualCount")],
+                join_by("sampleID"=="sampleID"))
+
 #### Determine incorrect species identifications and propagate correct identifications into main sorting table
 
-# Join expert and parataxonomist tables
-para_expert<-left_join(para,expert,join_by("individualID"=="individualID"),suffix=c(".para",".expert"))
+# Join necessary columns of expert and parataxonomist tables
+pinned<-left_join(para[,c("subsampleID","individualID","taxonID")],
+                  expert[c("individualID","taxonID")],
+                  join_by("individualID"=="individualID"),
+                  suffix=c(".para",".expert"))
 
-# All expert rows should correspond to one and only one para row, but not all para rows will correspond to an expert row
-# Investigate duplicates if there is a mismatch between number of rows in para and para_expert
-para_expert[which(para_expert$uid.para %in% para_expert$uid.para[which(duplicated(para_expert$uid.para))]),]
-# Some duplicates are potentially re-identifications by different experts of the same beetles, leaving all data to be conservative, does not affect overall presence of species at any site
+# For all pinned specimens choose the ID of the expert when exists, parataxonomist otherwise
+pinned$taxonID<-pinned$taxonID.expert
+pinned$taxonID[is.na(pinned$taxonID)]<-pinned$taxonID.para[is.na(pinned$taxonID)]
 
-# Subset to instances where expert ID exists to investigate mismatches
-para_expert_Exp<-para_expert[which(is.na(para_expert$scientificName.expert)==FALSE),]
-mismatch<-para_expert_Exp[which(para_expert_Exp$scientificName.para!=para_expert_Exp$scientificName.expert),]
-# see that many mismatches exist, so decide need to propagate expert IDs into main sorting table
-
-# For all pinned specimens choose the ID of either the 
-para_expert$chosenID<-para_expert$taxonID.expert
-para_expert$chosenID[is.na(para_expert$chosenID)]<-para_expert$taxonID.para[is.na(para_expert$chosenID)]
-
-for (i in 1:nrow()){
-  
+# Create records for the pinned individuals in the main table
+for (i in 1:nrow(pinned)){
+  row<-which(main$subsampleID==pinned$subsampleID[i])
+  main$individualCount[row]<-main$individualCount[row]-1
+  newrecord<-main[row]
+  newrecord$individualCount<-1
+  newrecord$taxonID<-pinned$taxonID[i]
+  main<-rbind(main,newrecord)
 }
 
 # Put expert ID where exist into sorting table
