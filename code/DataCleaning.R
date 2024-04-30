@@ -51,33 +51,11 @@ pinned$taxonID[is.na(pinned$taxonID)]<-pinned$taxonID.para[is.na(pinned$taxonID)
 for (i in 1:nrow(pinned)){
   row<-which(main$subsampleID==pinned$subsampleID[i])
   main$individualCount[row]<-main$individualCount[row]-1
-  newrecord<-main[row]
+  newrecord<-main[row,]
   newrecord$individualCount<-1
   newrecord$taxonID<-pinned$taxonID[i]
   main<-rbind(main,newrecord)
 }
 
-# Put expert ID where exist into sorting table
-sort_expert<-left_join(sort,para_expert,join_by("subsampleID"=="subsampleID"),suffix=c(".sort",".para_expert"))
-
-
-
-# Examine how often beetles from the same subsample are identified differently be the exper
-multiples<-sort_expert$subsampleID[duplicated(sort_expert$subsampleID)]
-for (i in 1:length(multiples){
-  dupes<-sort_expert[which(sort_expert$subsampleID==multiples[i]),]
-  
-}
-
-
-for (i in 1:nrow(expert)){
-  # which parataxonomy table beetles are associated with the given pinned beetle identification?
-  subID<-para_expert$subsampleID[which(para_expert$individualID==expert$individualID[i])]
-  # what is the expert ID for these samples
-  sp<-para_expert$taxonID.para[which(para_expert$individualID==expert$individualID[i])]
-  # find the related sampleIDs
-  sortIDs<-which(sort$subsampleID==subID)# & sort$taxonID==sp)
-  print(paste(i,sortIDs))
-}
-
+# Drop all instances in which identification was not Carabid or was only to the family level
 

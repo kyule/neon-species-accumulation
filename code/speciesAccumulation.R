@@ -1,48 +1,24 @@
-#### Users must define their own paths
+### This is the primary file for analyzing NEON species accumulation data
+
+#### BEFORE RUNNING
+# Users must define their own paths
 
 # datapath<-"user defined path"
 # codepath<-"user defined path"
 
-# User should remove below
-source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
+#And users must have configured the DownloadNEONData.R file as desired for their work
 
+# And users should remove below line that loads in personal paths
+source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
 
 # Load some necessary packages
 library("ggplot2")
 library("dplyr")
 
-# load NEON taxonomy table
-taxa<-read.csv(paste0(datapath,"CarabidTaxonomicList_March2024.csv"))
+# Load in the formatted data tables and sampling effort
 
-#Neon_Token is what speeds up the data downloads (API token); NeonData is a full download of the NEON data
-#the DpID is the carabid pitfall data
-#Neon_Token<-"eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJhdWQiOiJodHRwczovL2RhdGEubmVvbnNjaWVuY2Uub3JnL2FwaS92MC8iLCJzdWIiOiJhbGNsYXVzQGFzdS5lZHUiLCJzY29wZSI6InJhdGU6cHVibGljIiwiaXNzIjoiaHR0cHM6Ly9kYXRhLm5lb25zY2llbmNlLm9yZy8iLCJleHAiOjE4NTk1NjA2MjYsImlhdCI6MTcwMTg4MDYyNiwiZW1haWwiOiJhbGNsYXVzQGFzdS5lZHUifQ.2KsLvpDqZH4jJM0FD9OC2rHqB6ADcWMg2wnSImWIGGjB2v3gVD1d_H4x71LcScWhZepGLW2hIy_NeWcudH6kOw"
-#NeonData<-loadByProduct(dpID="DP1.10022.001", token=Neon_Token, check.size=FALSE, include.provisional=TRUE)
-#download saved to files, so don't download again!
-#save(NeonData, file=paste0(path,"beetles.Robj"))
-load(file=paste0(path,"beetles.Robj"))
-
-# Pull tables of interest
-field<-NeonData$bet_fielddata
-sort<-NeonData$bet_sorting
-para<-NeonData$bet_parataxonomistID
-expert<-NeonData$bet_expertTaxonomistIDProcessed
-
-# Field sampling effort in trapnights, site x habitat x year
-field<-field[which(field$sampleCollected=="Y"),]
-field$year<-format(as.Date(field$collectDate),'%Y')
-daysEffort<-data.frame(field %>% 
-                         group_by(siteID,nlcdClass,year) %>% 
-                         summarise(days=sum(trappingDays)))
-
-
-# Sampling effort in individuals, site x habitat x year
-sort<-sort[which(sort$sampleType %in% c("carabid","other carabid")),]
-sort$year<-format(as.Date(sort$collectDate),'%Y')
-sort<-left_join(sort,field,join_by("sampleID"=="sampleID"))
-indivsEffort<-data.frame(sort %>% 
-                           group_by(siteID.x,nlcdClass,year.x) %>% 
-                           summarise(indivs=sum(individualCount)))
+source(paste0(codepath,"DataCleaning.R"))
+source(paste0(codepath,"SampleEffort.R"))
 
 
 # Join expert and para tables
