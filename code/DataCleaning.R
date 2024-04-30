@@ -6,7 +6,9 @@
 # datapath<-"user defined path"
 # codepath<-"user defined path"
 
-#And users must have downloaded the data file as desired for their work
+#And users must have configured the DownloadNEONData.R file as desired for their work
+# Indicate whether new data should be downloaded, downloads are time consuming so this is not recommended
+NewData<-FALSE
 
 # And users should remove below line that loads in personal paths
 source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
@@ -15,14 +17,16 @@ source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
 taxa<-read.csv(paste0(datapath,"CarabidTaxonomicList_March2024.csv"))
 
 # Load or download the NEON observation data
-source(paste0(codepath,"DownloadNEONData.R"))
+if (NewData==TRUE|file.exists(paste0(datapath,"NeonData.Robj"))==FALSE){
+  source(paste0(codepath,"DownloadNEONData.R"))
+  }
+else {load(file=paste0(datapath,"NeonData.Robj"))}
 
 # Pull tables of interest
 field<-NeonData$bet_fielddata
 sort<-NeonData$bet_sorting
 para<-NeonData$bet_parataxonomistID
 expert<-NeonData$bet_expertTaxonomistIDProcessed
-
 
 #  Subset field to whether sample was collected to start main analysis file
 main<-field[which(field$sampleCollected=="Y"),]
@@ -57,5 +61,18 @@ for (i in 1:nrow(pinned)){
   main<-rbind(main,newrecord)
 }
 
+# Replace subspecies with species level ID in the taxa table
+taxa$sciName<-taxa$scientificName
+taxa$sciName[which(taxa$taxonRank=="subspecies")]<-word(taxa$sciName, 1,2, sep=" ")
+
+# Join main and taxonomy tables & Subset taxonomy table to fields of interest, removes subspecies
+fullData<-left_join(main,
+                taxa[,c("taxonID","family","sciName")],
+                join_by("taxonID"=="taxonID"))
+
 # Drop all instances in which identification was not Carabid or was only to the family level
+fullData<-fullData[which(fullData$family=="Carabidae"),]
+fullData<-fullData[-which(fullData$sciName %in% ("Carabidae sp.","Carabidae spp.")),]
+
+
 

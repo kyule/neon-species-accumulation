@@ -14,7 +14,8 @@ source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
 
 # Load or download the NEON observation data and clean it
 source(paste0(codepath,"DownloadNEONData.R"))
-source(paste0(codepath,"DataCleaning.R"))
+
+
 
 # Load necessary package
 library("dplyr")
