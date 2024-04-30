@@ -54,32 +54,44 @@ pinned<-left_join(para[,c("subsampleID","individualID","taxonID")],
 pinned$taxonID<-pinned$taxonID.expert
 pinned$taxonID[is.na(pinned$taxonID)]<-pinned$taxonID.para[is.na(pinned$taxonID)]
 
-# Create records for the pinned individuals in the main table
-#### This is messing it up because it's renaming all of the records
-for (i in 1:nrow(pinned)){
-  row<-which(main$subsampleID==pinned$subsampleID[i])
-  main$individualCount[row]<-main$individualCount[row]-1
-  newrecords<-main[row,]
-  newrecords$individualCount<-1
-  newrecords$taxonID<-pinned$taxonID[i]
+### Create records for the pinned individuals in the main table
+# choose which subsamples have pinned specimens associated with them
+subsToUpdate<-unique(pinned$subsampleID)
+main$individualCountFinal<-main$individualCount
+  
+for (i in 1:length(subsToUpdate)){
+  row<-which(main$subsampleID==subsToUpdate[i])
+  pinnedIndivs<-pinned[which(pinned$subsampleID==subsToUpdate[i]),]
+  main$individualCountFinal[row]<-main$individualCountFinal[row]-nrow(pinnedIndivs)
+  newrecords<-data.frame(plotID=main$plotID[row],siteID=main$siteID[row],
+                         nlcdClass=main$nlcdClass[row],setDate=main$setDate[row],
+                         collectDate=main$collectDate[row],sampleID=main$sampleID[row],
+                         subsampleID=main$subsampleID[row],taxonID=pinnedIndivs$taxonID,
+                         individualCount=1,individualCountFinal=1)
   main<-rbind(main,newrecords)
-  print(paste(i,nrow(newrecords)))
 }
+
+# Replace NAs in individualCount with 0s
+fullData<-main[,-c("individualCount")] # replace to not risk losing what took a long time to run :)
+fullData$individualCount[is.na(fullData$individualCount)]<-0
+fullData$individualCountFinal[is.na(fullData$individualCountFinal)]<-0
 
 # Replace subspecies with species level ID in the taxa table
 taxa$sciName<-taxa$scientificName
 taxa$sciName[which(taxa$taxonRank=="subspecies")]<-word(taxa$sciName, 1,2, sep=" ")
 
 # Join main and taxonomy tables & Subset taxonomy table to fields of interest, removes subspecies
-fullData<-left_join(main,
+fullData<-left_join(fullData,
                 taxa[,c("taxonID","family","sciName")],
                 join_by("taxonID"=="taxonID"))
 
 # Drop all instances in which identification was not Carabid or was only to the family level
 fullData<-fullData[which(fullData$family=="Carabidae"),]
-fullData<-fullData[-which(fullData$sciName %in% ("Carabidae sp.","Carabidae spp.")),]
+fullData<-fullData[-which(fullData$sciName %in% c("Carabidae sp.","Carabidae spp.")),]
 
-# Sampling effort
+
+
+##### Sampling effort
 
 sort<-sort[which(sort$sampleType %in% c("carabid","other carabid")),]
 sort$year<-format(as.Date(sort$collectDate),'%Y')

@@ -21,8 +21,7 @@ library("dplyr")
 #Make sure both DataCleaning.R and SampleEffort.R are correctly configured
 
 if(NewCleanData==TRUE|file.exists(paste0(datapath,"CleanedData.Robj"))==FALSE){
-  source(paste0(codepath,"DataCleaning.R"))}
-else{load(file=paste0(datapath,"CleanedData.Robj")}
+  source(paste0(codepath,"DataCleaning.R"))}else{load(file=paste0(datapath,"CleanedData.Robj"))}
 
 # Sampling effort data
 
