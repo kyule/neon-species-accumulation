@@ -109,6 +109,7 @@ daysEffort<-data.frame(dhy_effort %>%
 # Get individuals and days together
 effort<-full_join(effort,daysEffort,join_by("siteID"=="siteID","nlcdClass"=="nlcdClass","year"=="year"))
 
+
 ### Save these data for analyses
 CleanedData<-list(fullData=fullData,effort=effort)
 save(CleanedData,file=paste0(datapath,"CleanedData.Robj"))

@@ -18,7 +18,7 @@ library("ggplot2")
 library("dplyr")
 
 # Load in the formatted clean data, or download and create it. 
-#Make sure both DataCleaning.R and SampleEffort.R are correctly configured
+#Make sure DataCleaning.R is correctly configured
 
 if(NewCleanData==TRUE|file.exists(paste0(datapath,"CleanedData.Robj"))==FALSE){
   source(paste0(codepath,"DataCleaning.R"))}else{load(file=paste0(datapath,"CleanedData.Robj"))}
