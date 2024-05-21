@@ -28,8 +28,6 @@ if(NewCleanData==TRUE|file.exists(paste0(datapath,"CleanedData.Robj"))==FALSE){
 
 
 
-
-
 # Join expert and para tables
 
 betIDs<-left_join(para,expert,join_by("individualID"=="individualID"),suffix=c(".para",".expert"))

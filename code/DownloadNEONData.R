@@ -15,7 +15,7 @@ product<-"DP1.10022.001"
 
 # start and end dates, must be formatted as "YYYY-MM" or NA for all time
 start<-"2000-01"
-end<-"2024-04"
+end<-"2024-05"
 
 # sites, concatenated list of siteCodes or use "all" for all sites
 sites<-"all"
