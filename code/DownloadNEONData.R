@@ -2,7 +2,7 @@
 
 #### BEFORE RUNNING
 
-#### Users must define their own paths and NEON toke
+#### Users must define their own paths and NEON token
 
 # datapath<-"user defined path"
 # codepath<-"user defined path"
@@ -36,5 +36,5 @@ library(neonUtilities)
                           enddate=end,
                           token=Neon_Token, 
                           check.size=FALSE, 
-                          include.provisional=TRUE)
+                          include.provisional=FALSE)
   save(NeonData, file=paste0(datapath,"NeonData.Robj"))

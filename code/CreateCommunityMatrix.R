@@ -64,7 +64,7 @@ createComm<-function(data,effort,site,nlcd,standardized){
 
 a<-createComm(fullData,effort,"SRER","shrubScrub","days")
 b<-specaccum(a)
-plot(b)
+plot(b,)
 
 c<-createComm(fullData,effort,"SRER","shrubScrub","years")
 d<-specaccum(c)
