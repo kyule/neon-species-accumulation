@@ -32,7 +32,7 @@ fullData<-CleanedData$fullData
 effort<-CleanedData$effort
 
 # Create function to reformat data for community matrix input into vegan package ### SOMETHING IS WRONG
-createComm<-function(data,effort,site,nlcd,standardized){
+createComm<-function(data,effort,site,nlcd){
   community<-data[which(data$siteID==site & data$nlcdClass==nlcd),]
   community<-community[community$individualCountFinal!=0,]
   community$comm<-paste(community$siteID,community$nlcdClass,community$year,sep=".")
@@ -41,46 +41,9 @@ createComm<-function(data,effort,site,nlcd,standardized){
   communityMatrix<-reshape(community.summary,direction="wide",timevar = "sciName",idvar="comm")
   colnames(communityMatrix)<-str_replace(colnames(communityMatrix),"individualCountFinal.","")
   communityMatrix[is.na(communityMatrix)]<-0
-  if(standardized=="years"){
-    row.names(communityMatrix)<-sapply(strsplit(communityMatrix$comm,"[.]"),'[',3)
-    return(communityMatrix[,-1])}
-  if(standardized=="days"){
-    eff<-effort[which(effort$siteID==site & effort$nlcdClass==nlcd),]
-    eff$comm<-paste(eff$siteID,eff$nlcdClass,eff$year,sep=".")
-    communityMatrix<-left_join(communityMatrix,eff[,c("comm","days")],join_by("comm"=="comm"))
-    communityMatrix[,-c(1,ncol(communityMatrix))]<-communityMatrix[,-c(1,ncol(communityMatrix))]/communityMatrix$days
-    row.names(communityMatrix)<-sapply(strsplit(communityMatrix$comm,"[.]"),'[',3)
-    return(communityMatrix[,-c(1,ncol(communityMatrix))])
-  }
-  if(standardized=="individuals"){
-    eff<-effort[which(effort$siteID==site & effort$nlcdClass==nlcd),]
-    eff$comm<-paste(eff$siteID,eff$nlcdClass,eff$year,sep=".")
-    communityMatrix<-left_join(communityMatrix,eff[,c("comm","indivs")],join_by("comm"=="comm"))
-    communityMatrix[,-c(1,ncol(communityMatrix))]<-communityMatrix[,-c(1,ncol(communityMatrix))]/communityMatrix$indivs
-    row.names(communityMatrix)<-sapply(strsplit(communityMatrix$comm,"[.]"),'[',3)
-    return(communityMatrix[,-c(1,ncol(communityMatrix))])
-  }
+  row.names(communityMatrix)<-sapply(strsplit(communityMatrix$comm,"[.]"),'[',3)
+  return(communityMatrix[,-1])
 }
-
-a<-createComm(fullData,effort,"SRER","shrubScrub","days")
-b<-specaccum(a)
-plot(b,)
-
-c<-createComm(fullData,effort,"SRER","shrubScrub","years")
-d<-specaccum(c)
-plot(d)
-
-e<-createComm(fullData,effort,"SRER","shrubScrub","individuals")
-f<-specaccum(e)
-plot(f)
-
-raremax<-min(rowSums(c))
-rarefy(c,raremax)
-rarecurve(c,1,100)
-
-metaMDS(c)->ord
-plot(ord)
-
 
 #### Just for fun, all communities in an ordination
 fullComms<-data.frame(fullData %>% group_by(siteID,sciName) %>% summarise(n=sum(individualCountFinal)))
