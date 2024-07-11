@@ -51,17 +51,28 @@ randomSpAccum<-function(field.dat,traps.peryear,sort.dat,n.traps,n.iter){
       rand.sort<-rbind(rand.sort,empty.data)
     }
     
-    
+    # Count the number of traps by year
     count.traps<-data.frame(rand.field %>% group_by(year) %>% count())$n
     
-    rand.sort.totals<-data.frame(rand.sort %>% group_by(taxonID,year) %>% summarise(individualCount=sum(individualCount)))
-    rand.sort.totals<-rand.sort.totals[!is.na(rand.sort.totals$individualCount),]
+    # remove the NA specimen counts
+    rand.sort<-rand.sort[!is.na(rand.sort$individualCount),]
     
+    # summarize by taxon and year and get the total abundance
+    rand.sort.totals<-data.frame(rand.sort %>% group_by(taxonID,year) %>% summarise(individualCount=sum(individualCount)))
+    
+    # reshape to create typical community matrix
     comm<-reshape(rand.sort.totals[,c("taxonID","year","individualCount")],direction="wide",timevar="taxonID",idvar="year")
+    
+    # redefine NAs as 0s
     comm[is.na(comm)]<-0
 
+    #  species accumulation from vegan package
     accum<-specaccum(comm)
-    df<-data.frame(iter=rep(i,nrow(trapsPerYear)),n.traps=count.traps,year=accum$sites,richness=accum$richness)
+    
+    # create a data frame of results for this iteration
+    df<-data.frame(iter=rep(i,nrow(traps.peryear)),n.traps=count.traps,year=accum$sites,richness=accum$richness)
+    
+    # add this iterations results to the overall results
     accum.df<-rbind(accum.df,df)
   }
   
