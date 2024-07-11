@@ -1,11 +1,11 @@
 
-### Want to understand years of sampling required, but sampling differs across years, need to scale by trap nights across years of sampling
+### Want to understand years of sampling required, but sampling differs across years, need to scale by the number of traps
 
 library(lubridate)
 library(vegan)
 library(ggplot2)
+library(neonUtilities)
 
-### This is the  file for downloading NEON data
 
 #### BEFORE RUNNING
 
@@ -25,10 +25,6 @@ product<-"DP1.10022.001"
 start<-"2000-01"
 end<-"2024-05"
 
-# load package
-library(neonUtilities)
-
-
 # Use loadByProduct to download the data
 NeonData<-loadByProduct(dpID=product,
                         site="PUUM",
@@ -46,33 +42,46 @@ sort<-NeonData$bet_sorting
 para<-NeonData$bet_parataxonomistID
 expert<-NeonData$bet_expertTaxonomistIDProcessed
 
-### Summarize trap nights
+### Subset to only traps that were collected
 field<-field[which(field$sampleCollected=="Y"),]
-field<-
-field$year<-year(field$collectDate)
 
+### Add year and summarize
+field$year<-year(field$collectDate)
 trapsPerYear<-field %>% group_by(year) %>% count()
 
-randomSpAccum<-function(field.dat,sort.dat,n.traps,n.iter){
+randomSpAccum<-function(field.dat,traps.peryear,sort.dat,n.traps,n.iter){
   
   set.seed(85705)
   
-  trapsPerYear<-field.dat %>% group_by(year) %>% count()
+  # subset to carabids
   sort.dat<-sort.dat[which(sort.dat$sampleType %in% c("carabid")),]
+  
+  # create data frame for species accumulation work
   accum.df<-data.frame(iter=c(),n.traps=c(),year=c(),richness=c())
   
+  # cycle through the number of iterations
   for (i in 1:n.iter){
+    
+    #randomly reorder field data
     field.iter<-field[sample(1:nrow(field),nrow(field)),]
+    
+    # create data frame for selection of traps for this iteration
     rand.field<-data.frame()
     
-    for (j in 1:nrow(trapsPerYear)){
-      year<-trapsPerYear$year[j]
-      print(paste0("j: ",j," year: ",year))
+    # cycle through the number of years
+    for (j in 1:nrow(traps.peryear)){
+      #define the year
+      year<-traps.peryear$year[j]
+      #select traps for the year
       traps<-field.iter[which(field.iter$year==year),]
+      #subset to number of traps being sampled which is n.traps unless n.traps is larger than the total number of traps
       rand.traps<-traps[1:min(n.traps,nrow(traps)),]
+      # add to the data the randomized data frame
       rand.field<-rbind(rand.field,rand.traps)
     }
     
+    # find the years of sampling
+    field.years<-unique(rand.field$year)
     rand.sort<-sort[which(sort$sampleID %in% rand.field$sampleID),]
     rand.sort$year<-year(rand.sort$collectDate)
     
