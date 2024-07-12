@@ -1,21 +1,22 @@
-
+### This is the primary file for analyzing NEON species accumulation data
 ### Want to understand years of sampling required, but sampling differs across years, need to scale by the number of traps
+
+
+#### BEFORE RUNNING
+# Users must define their own paths
+
+# datapath<-"user defined path"
+# codepath<-"user defined path"
+
+# And users should remove below line that loads in personal paths
+source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
+
 
 library(lubridate)
 library(dplyr)
 library(vegan)
 library(ggplot2)
 library(neonUtilities)
-
-
-#### BEFORE RUNNING
-
-#### Users must define their own paths and NEON token
-
-# datapath<-"user defined path"
-# codepath<-"user defined path"
-# Neon_Token<-"user's token"
-source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
 
 #### And users should define their variables for the NEON data download
 
@@ -26,110 +27,75 @@ product<-"DP1.10022.001"
 start<-"2000-01"
 end<-"2024-05"
 
-# Use loadByProduct to download the data
-NeonData<-loadByProduct(dpID=product,
-                        site="PUUM",
-                        startdate=start,
-                        enddate=end,
-                        token=Neon_Token, 
-                        check.size=FALSE, 
-                        include.provisional=FALSE)
-save(NeonData, file=paste0("~/Desktop/","PUUM_NeonData.Robj"))
+# Users need to indicate whether they want to load or re-download and format the NEON data 
+# These these steps are very time consuming so it is recommended that they are only done if necessary
+NewData<-FALSE
+
+# Load in the Data
+
+# Load or download the NEON observation data
+if(NewData==TRUE|file.exists(paste0(datapath,"NeonData.Robj"))==FALSE){
+  source(paste0(codepath,"DownloadNEONData.R"))
+}else{load(file=paste0(datapath,"NeonData.Robj"))}
+
+
 
 ####
 # Pull tables of interest
 field<-NeonData$bet_fielddata
 sort<-NeonData$bet_sorting
 
-### Subset to only traps that were collected
+# Subset to only traps that were collected
 field<-field[which(field$sampleCollected=="Y"),]
 
-### Add year and summarize
+# Add year 
 field$year<-year(field$collectDate)
-trapsPerYear<-field %>% group_by(year) %>% count()
 
-randomSpAccum<-function(field.dat,traps.peryear,sort.dat,n.traps,n.iter){
+# Get the unique site x years list
+siteSummary<-data.frame(field %>% group_by(siteID) %>% summarise(years=length(unique(year))))
+siteSummary$richness<-NA
+siteSummary$obs.asym<-NA
+siteSummary$obs.mid<-NA
+siteSummary$mean25.asym<-NA
+siteSummary$var25.asym<-NA
+siteSummary$mean25.mid<-NA
+siteSummary$var25.mid<-NA
+
+# Source the randomSpAccum function
+source("/Users/kelsey/Github/neon-species-accumulation/code/randomTrapFunction.R")
+
+### iterate over all sites
+
+for (i in 1:nrow(siteSummary)){
+  site<-siteSummary$siteID[i]
+  field.dat<-field[which(field$siteID==site),]
+  sort.dat<-sort[which(sort$siteID==site),]
+  trapsPerYear<-field.dat %>% group_by(year) %>% count()
+  #n.25<-randomSpAccum(field.dat,trapsPerYear,sort.dat,25,1)
+  #n.100<-randomSpAccum(field.dat,trapsPerYear,sort.dat,100,100)
+  #max<-randomSpAccum(field.dat,trapsPerYear,sort.dat,min(trapsPerYear$n),100)
+  obs<-randomSpAccum(field.dat,trapsPerYear,sort.dat,max(trapsPerYear$n),1)
   
-  set.seed(85705)
+  siteSummary$richness[i]<-length(unique(sort.dat$taxonID[which(sort.dat$sampleType=="carabid")]))
+  siteSummary$obs.asym[i]<-obs$asym[1]
+  siteSummary$obs.mid[i]<-obs$mid[1]
   
-  # subset to carabids
-  sort.dat<-sort.dat[which(sort.dat$sampleType=="carabid"),]
+  ggplot(data=obs[1:length(unique(obs$year)),],aes(x=year,y=richness,group=iter,color='red'))+
+    geom_line(linewidth=1.5)+
+    title(site)+
+    theme_minimal()+
+    theme(legend.position = 'none')+ 
+    ylim(0, (max(obs$richness)+10))
+    #+ geom_line(data=n.25,aes(x=year,y=richness,group=iter),color='lightgray',linewidth=0.25)+
+    #geom_line(data=n.100,aes(x=year,y=richness,group=iter),color='darkgray',linewidth=0.25)+
+    #geom_line(data=max,aes(x=year,y=richness,group=iter),color='blue',linewidth=0.25)
   
-  # create data frame for species accumulation work
-  accum.df<-data.frame(iter=c(),n.traps=c(),year=c(),richness=c())
-  
-  # cycle through the number of iterations
-  for (i in 1:n.iter){
-    
-    #randomly reorder field data
-    field.iter<-field[sample(1:nrow(field),nrow(field)),]
-    
-    # create data frame for selection of traps for this iteration
-    rand.field<-data.frame()
-    
-    # cycle through the number of years
-    for (j in 1:nrow(traps.peryear)){
-      #define the year
-      year<-traps.peryear$year[j]
-      #select traps for the year
-      traps<-field.iter[which(field.iter$year==year),]
-      #subset to number of traps being sampled which is n.traps unless n.traps is larger than the total number of traps
-      rand.traps<-traps[1:min(n.traps,nrow(traps)),]
-      # add to the data the randomized data frame
-      rand.field<-rbind(rand.field,rand.traps)
-    }
-    
-    # find the years of sampling
-    field.years<-unique(rand.field$year)
-    # select the sorting table values based on the field samples chosen
-    rand.sort<-sort.dat[which(sort.dat$sampleID %in% rand.field$sampleID),]
-    #add year to the sorting table
-    rand.sort$year<-year(rand.sort$collectDate)
-    # are any years missing? (i.e. no carabids were caught)
-    miss<-field.years[-which(field.years %in% unique(rand.sort$year))]
-    # add empty data for the missing years
-    if(length(miss)>0){
-      #create skeletal data records for the missing years
-      empty.data<-rand.sort[1:length(miss),]
-      # set individual count to 0 to indicate that nothing was caught
-      empty.data$individualCount<-0
-      # update the years to the missing years
-      empty.data$year<-miss
-      # add it to the rand.sort table
-      rand.sort<-rbind(rand.sort,empty.data)
-      }
-    
-    
-    count.traps<-data.frame(rand.field %>% group_by(year) %>% count())$n
-    
-    rand.sort.totals<-data.frame(rand.sort %>% group_by(taxonID,year) %>% summarise(individualCount=sum(individualCount)))
-    rand.sort.totals<-rand.sort.totals[!is.na(rand.sort.totals$individualCount),]
-    
-    comm<-reshape(rand.sort.totals[,c("taxonID","year","individualCount")],direction="wide",timevar="taxonID",idvar="year")
-    comm[is.na(comm)]<-0
-    
-    print(i)
-    print(tail(rand.sort))
-    accum<-specaccum(comm)
-    print(comm)
-    df<-data.frame(iter=rep(i,nrow(trapsPerYear)),n.traps=count.traps,year=accum$sites,richness=accum$richness)
-    accum.df<-rbind(accum.df,df)
-}
-    
-  return(accum.df)
 }
 
-srer.25<-randomSpAccum(field,trapsPerYear,sort,25,100)
-srer.100<-randomSpAccum(field,trapsPerYear,sort,100,100)
-srer.max<-randomSpAccum(field,trapsPerYear,sort,min(trapsPerYear$n),100)
-srer.obs<-randomSpAccum(field,trapsPerYear,sort,max(trapsPerYear$n),100)
 
-ggplot(data=srer.obs[1:length(unique(srer.obs$year)),],aes(x=year,y=richness,group=iter,color='red'))+
-  geom_line(linewidth=1.5)+
-  theme_minimal()+
-  theme(legend.position = 'none')+ 
-  ylim(0, (max(srer.obs$richness)+10))+
-  geom_line(data=srer.25,aes(x=year,y=richness,group=iter),color='lightgray',linewidth=0.25)+
-  geom_line(data=srer.100,aes(x=year,y=richness,group=iter),color='darkgray',linewidth=0.25)+
-  geom_line(data=srer.max,aes(x=year,y=richness,group=iter),color='blue',linewidth=0.25)
+
+
+
+
+
 

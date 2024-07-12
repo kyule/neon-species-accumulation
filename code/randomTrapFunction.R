@@ -8,13 +8,13 @@ randomSpAccum<-function(field.dat,traps.peryear,sort.dat,n.traps,n.iter){
   sort.dat<-sort.dat[which(sort.dat$sampleType=="carabid"),]
   
   # create data frame for species accumulation work
-  accum.df<-data.frame(iter=c(),n.traps=c(),year=c(),richness=c())
+  accum.df<-data.frame(iter=c(),n.traps=c(),year=c(),richness=c(),asym=c(),mid=c())
   
   # cycle through the number of iterations
   for (i in 1:n.iter){
     
     #randomly reorder field data
-    field.iter<-field[sample(1:nrow(field),nrow(field)),]
+    field.iter<-field.dat[sample(1:nrow(field.dat),nrow(field.dat)),]
     
     # create data frame for selection of traps for this iteration
     rand.field<-data.frame()
@@ -68,9 +68,12 @@ randomSpAccum<-function(field.dat,traps.peryear,sort.dat,n.traps,n.iter){
 
     #  species accumulation from vegan package
     accum<-specaccum(comm)
-    
+    fit<-fitspecaccum(accum,"lomolino")
+    asym<-coef(fit)[1]
+    mid<-coef(fit)[2]
+
     # create a data frame of results for this iteration
-    df<-data.frame(iter=rep(i,nrow(traps.peryear)),n.traps=count.traps,year=accum$sites,richness=accum$richness)
+    df<-data.frame(iter=rep(i,nrow(traps.peryear)),n.traps=count.traps,year=accum$sites,richness=accum$richness,asym=asym,mid=mid)
     
     # add this iterations results to the overall results
     accum.df<-rbind(accum.df,df)
