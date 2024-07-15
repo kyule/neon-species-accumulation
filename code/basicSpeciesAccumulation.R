@@ -52,14 +52,7 @@ field<-field[which(field$sampleCollected=="Y"),]
 field$year<-year(field$collectDate)
 
 # Get the unique site x years list
-siteSummary<-data.frame(field %>% group_by(siteID) %>% summarise(years=length(unique(year))))
-siteSummary$richness<-NA
-siteSummary$obs.asym<-NA
-siteSummary$obs.mid<-NA
-siteSummary$mean25.asym<-NA
-siteSummary$var25.asym<-NA
-siteSummary$mean25.mid<-NA
-siteSummary$var25.mid<-NA
+#siteSummary<-data.frame(field %>% group_by(siteID) %>% summarise(years=length(unique(year))))
 
 # Source the randomSpAccum function
 source("/Users/kelsey/Github/neon-species-accumulation/code/randomTrapFunction.R")
@@ -70,32 +63,24 @@ for (i in 1:nrow(siteSummary)){
   site<-siteSummary$siteID[i]
   field.dat<-field[which(field$siteID==site),]
   sort.dat<-sort[which(sort$siteID==site),]
+  sort.dat$year<-year(sort.dat$collectDate)
   trapsPerYear<-field.dat %>% group_by(year) %>% count()
-  #n.25<-randomSpAccum(field.dat,trapsPerYear,sort.dat,25,1)
-  #n.100<-randomSpAccum(field.dat,trapsPerYear,sort.dat,100,100)
-  #max<-randomSpAccum(field.dat,trapsPerYear,sort.dat,min(trapsPerYear$n),100)
-  rm(obs)
-  tryCatch( { obs<-randomSpAccum(field.dat,trapsPerYear,sort.dat,max(trapsPerYear$n),1)}, 
-            error=function(e){cat("ERROR :",conditionMessage(e), "\n")})
   
-  siteSummary$richness[i]<-length(unique(sort.dat$taxonID[which(sort.dat$sampleType=="carabid")]))
-  if(exists("obs")){siteSummary$obs.asym[i]<-obs$asym[1]
-  siteSummary$obs.mid[i]<-obs$mid[1]
+  rand.sort.totals<-data.frame(sort.dat %>% group_by(taxonID,year) %>% summarise(individualCount=sum(individualCount)))
   
-  plotAccum<-ggplot(data=obs[1:length(unique(obs$year)),],aes(x=year,y=richness,group=iter,color='red'))+
-    geom_line(linewidth=1.5)+
-    title(site)+
-    theme_minimal()+
-    theme(legend.position = 'none')+ 
-    ylim(0, (max(obs$richness)+10))  
-  #+ geom_line(data=n.25,aes(x=year,y=richness,group=iter),color='lightgray',linewidth=0.25)+
-  #geom_line(data=n.100,aes(x=year,y=richness,group=iter),color='darkgray',linewidth=0.25)+
-  #geom_line(data=max,aes(x=year,y=richness,group=iter),color='blue',linewidth=0.25)
-  plotAccum
-
+  # reshape to create typical community matrix
+  comm<-reshape(rand.sort.totals[,c("taxonID","year","individualCount")],direction="wide",timevar="taxonID",idvar="year")
+  
+  # redefine NAs as 0s
+  comm[is.na(comm)]<-0
+  
+  accum<-specaccum(comm)
+  
+  plot(accum,main=as.character(site))
+  fit<-fitspecaccum(accum,"lomolino")
+  coef(fit)
   }
   
-}
 
 
 
