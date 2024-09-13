@@ -94,6 +94,9 @@ fullData$year<-format(as.Date(fullData$collectDate),'%Y')
 fullData$eventID<-paste(fullData$siteID,fullData$collectDate)
 fullData$plotEvent<-paste(fullData$plotID,fullData$collectDate)
 
+# Drop instances in which the individualCount is now 0
+fullData<-fullData[which(fullData$individualCount>0),]
+
 ### Save these data for analyses
 CleanedData<-list(fullData=fullData,field=field)
-save(CleanedData,file=paste0(datapath,"CleanedData.Robj"))
+save(CleanedData,file=paste0(datapath,"202409_CleanedData.Robj"))
