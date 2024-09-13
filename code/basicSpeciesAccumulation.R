@@ -25,7 +25,7 @@ product<-"DP1.10022.001"
 
 # start and end dates, must be formatted as "YYYY-MM" or NA for all time
 start<-"2000-01"
-end<-"2024-05"
+end<-"2023-12"
 
 # Users need to indicate whether they want to load or re-download and format the NEON data 
 # These these steps are very time consuming so it is recommended that they are only done if necessary
@@ -42,8 +42,8 @@ if(NewData==TRUE|file.exists(paste0(datapath,"NeonData.Robj"))==FALSE){
 
 ####
 # Pull tables of interest
-field<-NeonData$bet_fielddata
-sort<-NeonData$bet_sorting
+field<-NeonData3$bet_fielddata
+sort<-NeonData3$bet_sorting
 
 # Subset to only traps that were collected
 field<-field[which(field$sampleCollected=="Y"),]
@@ -52,7 +52,7 @@ field<-field[which(field$sampleCollected=="Y"),]
 field$year<-year(field$collectDate)
 
 # Get the unique site x years list
-#siteSummary<-data.frame(field %>% group_by(siteID) %>% summarise(years=length(unique(year))))
+siteSummary<-data.frame(field %>% group_by(siteID) %>% summarise(years=length(unique(year))))
 
 # Source the randomSpAccum function
 source("/Users/kelsey/Github/neon-species-accumulation/code/randomTrapFunction.R")

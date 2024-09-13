@@ -34,7 +34,7 @@ expert<-NeonData$bet_expertTaxonomistIDProcessed
 #  Subset field to whether sample was collected to start main analysis file
 main<-field[which(field$sampleCollected=="Y"),]
 
-#subset to columnns of interest
+#subset to columns of interest
 main<-main[,c("plotID","siteID","nlcdClass","setDate","collectDate","sampleID")]
 
 #Subset sort table to carabids, columns of interest and join to field table
