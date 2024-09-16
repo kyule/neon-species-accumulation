@@ -32,6 +32,8 @@ if(NewCleanData==TRUE|file.exists(paste0(datapath,"202409_CleanedData.Robj"))==F
 
 data<-CleanedData$fullData
 
+field<-CleanedData$field
+
 # Create community matrix for Year X Site 
 
 spp<-unique(data$taxonID)
@@ -114,8 +116,6 @@ plot(total~as.factor(site),turnovers,ylim=c(0,1))
 plot(appear~as.factor(site),turnovers,ylim=c(0,1))
 plot(disappear~as.factor(site),turnovers,ylim=c(0,1))
 
-
-
 # test looking at change rates at srer
 srer<-input[grep("SRER",rownames(input)),]
 srer<-melt(as.matrix(srer))
@@ -132,7 +132,9 @@ comm.rate <- rate_change(srer,
 ggplot(comm.res, aes(interval, distance)) + 
   geom_point() + theme_bw() + stat_smooth(method = "lm", se = F, size = 2)
 
-
+# Now do above turnover metrics, but use sampling effort
+field$com<-paste(field$domainID,field$siteID,field$year,sep="_")
+field %>% group_by(com) %>% summarise(effort=sum(night))
 
 
 
