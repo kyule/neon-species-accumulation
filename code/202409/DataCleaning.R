@@ -35,7 +35,7 @@ expert<-NeonData$bet_expertTaxonomistIDProcessed
 main<-field[which(field$sampleCollected=="Y"),]
 
 #subset to columns of interest
-main<-main[,c("plotID","siteID","nlcdClass","setDate","collectDate","sampleID")]
+main<-main[,c("plotID","siteID","domainID","nlcdClass","setDate","collectDate","sampleID")]
 
 #Subset sort table to carabids, columns of interest and join to field table
 main<-left_join(main,
@@ -63,10 +63,15 @@ for (i in 1:length(subsToUpdate)){
   row<-which(main$subsampleID==subsToUpdate[i])
   pinnedIndivs<-pinned[which(pinned$subsampleID==subsToUpdate[i]),]
   main$individualCountFinal[row]<-main$individualCountFinal[row]-nrow(pinnedIndivs)
-  newrecords<-data.frame(plotID=main$plotID[row],siteID=main$siteID[row],
-                         nlcdClass=main$nlcdClass[row],setDate=main$setDate[row],
-                         collectDate=main$collectDate[row],sampleID=main$sampleID[row],
-                         subsampleID=main$subsampleID[row],taxonID=pinnedIndivs$taxonID,
+  newrecords<-data.frame(plotID=main$plotID[row],
+                         siteID=main$siteID[row],
+                         domainID=main$domainID[row],
+                         nlcdClass=main$nlcdClass[row],
+                         setDate=main$setDate[row],
+                         collectDate=main$collectDate[row],
+                         sampleID=main$sampleID[row],
+                         subsampleID=main$subsampleID[row],
+                         taxonID=pinnedIndivs$taxonID,
                          individualCount=1,individualCountFinal=1)
   main<-rbind(main,newrecords)
 }
