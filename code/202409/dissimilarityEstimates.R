@@ -110,13 +110,29 @@ for (i in 1:length(sites)){
 }
 
 turnovers<-turnovers[-1,]
-plot(total~as.factor(site),turnovers)
+plot(total~as.factor(site),turnovers,ylim=c(0,1))
+plot(appear~as.factor(site),turnovers,ylim=c(0,1))
+plot(disappear~as.factor(site),turnovers,ylim=c(0,1))
 
+
+
+# test looking at change rates at srer
+srer<-input[grep("SRER",rownames(input)),]
+srer<-melt(as.matrix(srer))
+srer$year<-as.numeric(substring(srer$Var1,10,13))
+names(srer)<-c("comm","species","abundance","year")
 comm.res <- rate_change_interval(srer, 
                                  time.var = "year",
                                  species.var = "species",
                                  abundance.var = "abundance")
-
+comm.rate <- rate_change(srer, 
+                                 time.var = "year",
+                                 species.var = "species",
+                                 abundance.var = "abundance")
 ggplot(comm.res, aes(interval, distance)) + 
   geom_point() + theme_bw() + stat_smooth(method = "lm", se = F, size = 2)
+
+
+
+
 
