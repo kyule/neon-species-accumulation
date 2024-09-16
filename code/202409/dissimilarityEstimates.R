@@ -3,6 +3,8 @@
 library("rarestR")
 library("corrplot")
 library("reshape2")
+library("codyn")
+library("ggplot2")
 
 #### BEFORE RUNNING
 # Users must define their own paths
@@ -80,11 +82,41 @@ plot(dissim~as.factor(sameSite),dissim.long)
 plot(dissim~as.factor(sameDomain),dissim.long)
 plot(dissim~as.factor(years),dissim.long[which(dissim.long$sameSite==1),])
 
+# Calculate species turnover measures, can make these trap specific!
 
+# srer example
+sites<-unique(substring(rownames(input),5,8))
 
+turnovers<-data.frame("site"=NA,
+                  "year"=NA,
+                  "total"=NA,
+                  "appear"=NA,
+                  "disappear"=NA)
 
+for (i in 1:length(sites)){
+  com<-input[grep(sites[i],rownames(input)),]
+  com<-melt(as.matrix(com))
+  com$year<-as.numeric(substring(com$Var1,10,13))
+  names(com)<-c("comm","species","abundance","year")
+  com.turn<-turnover(com,time.var="year",species.var="species",abundance.var="abundance",metric="total")
+  com.appear<-turnover(com,time.var="year",species.var="species",abundance.var="abundance",metric="appearance")
+  com.disappear<-turnover(com,time.var="year",species.var="species",abundance.var="abundance",metric="disappearance")
+  turns<-data.frame("site"=rep(sites[i],nrow(com.turn)),
+                    "year"=com.turn$year,
+                    "total"=com.turn$total,
+                    "appear"=com.appear$appearance,
+                    "disappear"=com.disappear$disappearance)
+  turnovers<-rbind(turnovers,turns)
+}
 
+turnovers<-turnovers[-1,]
+plot(total~as.factor(site),turnovers)
 
+comm.res <- rate_change_interval(srer, 
+                                 time.var = "year",
+                                 species.var = "species",
+                                 abundance.var = "abundance")
 
-
+ggplot(comm.res, aes(interval, distance)) + 
+  geom_point() + theme_bw() + stat_smooth(method = "lm", se = F, size = 2)
 
