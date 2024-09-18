@@ -5,6 +5,8 @@ library("corrplot")
 library("reshape2")
 library("codyn")
 library("ggplot2")
+library("lubridate")
+library("dplyr")
 
 #### BEFORE RUNNING
 # Users must define their own paths
@@ -37,7 +39,7 @@ field<-CleanedData$field
 # Create community matrix for Year X Site 
 
 spp<-unique(data$taxonID)
-data$siteyear<-paste(data$domainID,data$siteID,data$year,sep="_")
+data$siteyear<-paste(data$field_domain_id,data$siteID,data$year,sep="_")
 siteyear<-unique(data$siteyear)
 data<-data[order(data$siteyear),]
 
@@ -59,8 +61,8 @@ dissim <- as.matrix(ess(input))
 corrplot(dissim,method='color',col.lim=c(0,1))
 
 # For a specific group of samples
-factor<-"D16"
-corDis<-dissim[grep(factor,rownames(input)),grep(factor,rownames(input))]
+factor<-"D04"
+corDis<-dissim[grep(factor,rownames(dissim)),grep(factor,rownames(dissim))]
 corrplot(corDis,method='color',col.lim=c(0,1))
 
 # Turn data frame into long form
@@ -79,14 +81,16 @@ dissim.long$sameSite[which(dissim.long$site1==dissim.long$site2)]<-1
 dissim.long$years<-abs(dissim.long$year1-dissim.long$year2)
 
 # Plot Values
-
+dev.off()
 plot(dissim~as.factor(sameSite),dissim.long)
 plot(dissim~as.factor(sameDomain),dissim.long)
 plot(dissim~as.factor(years),dissim.long[which(dissim.long$sameSite==1),])
 
-# Calculate species turnover measures, can make these trap specific!
+model<-lm(dissim~sameDomain*sameSite*years,dissim.long)
+summary(model)
 
-# srer example
+# Calculate species turnover measures
+
 sites<-unique(substring(rownames(input),5,8))
 
 turnovers<-data.frame("site"=NA,
@@ -116,25 +120,4 @@ plot(total~as.factor(site),turnovers,ylim=c(0,1))
 plot(appear~as.factor(site),turnovers,ylim=c(0,1))
 plot(disappear~as.factor(site),turnovers,ylim=c(0,1))
 
-# test looking at change rates at srer
-srer<-input[grep("SRER",rownames(input)),]
-srer<-melt(as.matrix(srer))
-srer$year<-as.numeric(substring(srer$Var1,10,13))
-names(srer)<-c("comm","species","abundance","year")
-comm.res <- rate_change_interval(srer, 
-                                 time.var = "year",
-                                 species.var = "species",
-                                 abundance.var = "abundance")
-comm.rate <- rate_change(srer, 
-                                 time.var = "year",
-                                 species.var = "species",
-                                 abundance.var = "abundance")
-ggplot(comm.res, aes(interval, distance)) + 
-  geom_point() + theme_bw() + stat_smooth(method = "lm", se = F, size = 2)
-
-# Now do above turnover metrics, but use sampling effort
-field$com<-paste(field$domainID,field$siteID,field$year,sep="_")
-field %>% group_by(com) %>% summarise(effort=sum(night))
-
-
-
+# Compare with 
