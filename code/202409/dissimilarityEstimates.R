@@ -86,7 +86,7 @@ plot(dissim~as.factor(sameSite),dissim.long)
 plot(dissim~as.factor(sameDomain),dissim.long)
 plot(dissim~as.factor(years),dissim.long[which(dissim.long$sameSite==1),])
 
-model<-lm(dissim~sameDomain*sameSite*years,dissim.long)
+model<-lm(dissim~sameDomain+sameSite+years,dissim.long)
 summary(model)
 
 # Calculate species turnover measures
@@ -119,5 +119,24 @@ turnovers<-turnovers[-1,]
 plot(total~as.factor(site),turnovers,ylim=c(0,1))
 plot(appear~as.factor(site),turnovers,ylim=c(0,1))
 plot(disappear~as.factor(site),turnovers,ylim=c(0,1))
+summary(lm(disappear~as.factor(year),turnovers))  ### disappearance only increased in 2020 with the reduced sampling
+summary(lm(total~as.factor(year),turnovers))  ### overall turnover didn't depend on year
+summary(lm(appear~as.factor(year),turnovers))  ### appearance only decreased in 2020 with the reduced sampling
 
-# Compare with 
+
+# look at turnover by location
+turnovers.site<-left_join(turnovers,sitedata,join_by("site"=="field_site_id"))
+
+plot(turnovers.site$field_latitude~turnovers.site$field_longitude)  
+summary.bylocation<-turnovers.site %>% group_by(site,field_latitude,field_longitude) %>% summarise(turn=mean(total))
+plot(turn~field_longitude,summary.bylocation)
+
+plot(total~as.factor(field_latitude),turnovers.site)
+summary(lm(total~field_latitude,turnovers.site)) # turnover decreases with latitude
+plot(total~as.factor(field_latitude),turnovers.site)
+
+ggplot(summary.bylocation, aes(x = field_longitude, y = field_latitude, color = turn)) + 
+  geom_point(size=2.5) + 
+  scale_color_gradient(low = "purple", high = "yellow") 
+
+
