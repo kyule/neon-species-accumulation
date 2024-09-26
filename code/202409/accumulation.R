@@ -40,14 +40,15 @@ inext<-setNames(vector(mode="list",length=length(sites)),sites)
 
 for (i in 1:length(inext)){
   
+  print(sites[i])
   dat<-fullData[which(fullData$siteID==sites[i]),]
   years<-unique(dat$year)
   
-  inext[[i]]<-setNames(vector(mode="list",length=length(years)),years)
-  inc_freq<-setNames(vector(mode="list",length=length(years)),years)
+  inext[[i]]<-setNames(vector(mode="list",length=(length(years)+1)),c(years,"full"))
+  inc_freq<-setNames(vector(mode="list",length=(length(years)+1)),c(years,"full"))
   
-  for (j in 1:length(year)){
-    
+  for (j in 1:length(years)){
+    print(paste0("     ","year=",years[j]))
     datyear<-dat[which(dat$year==years[j]),]
     samps<-unique(datyear$sampleID)
     spp<-unique(datyear$taxonID)
@@ -74,14 +75,39 @@ for (i in 1:length(inext)){
     inext[[i]][[j]]$inc_freq<-input
     inc_freq[[j]]<-input
   }
+    print("    FULL")
+    samps<-unique(dat$sampleID)
+    spp<-unique(dat$taxonID)
+    spp<-spp[is.na(spp)==FALSE]
+    inc<-data.frame(matrix(ncol=length(samps),nrow=length(spp)))
+    colnames(inc)<-samps
+    rownames(inc)<-spp
     
-
-    out<-iNEXT(inc_freq,datatype='incidence_freq',knot=20,endpoint=ncol(presabs)*3)
+    for (k in 1:nrow(inc)){
+      for (l in 1:ncol(inc)){
+        inds<-dat$individualCountFinal[which(dat$sampleID==samps[k] & dat$taxonID==spp[l])]
+        if (length(inds)>0) {inc[k,l]<-sum(inds)}
+      }
+    }
+    
+    inc[is.na(inc)]<-0
+    
+    inext[[i]][[j+1]]$inc<-inc
+    
+    presabs<-inc
+    presabs[presabs>1]<-1
+    
+    input<-c(ncol(presabs),as.vector(rowSums(presabs)))
+    inext[[i]][[j+1]]$inc_freq<-input
+    inc_freq[[j+1]]<-input
+    print(paste0("iNEXT ",sites[i]))
+    out<-iNEXT(inc_freq,q=c(0,1,2),datatype='incidence_freq',knot=20,endpoint=ncol(presabs)*3)
     inext[[i]]$out<-out
     
-  }
-  
 }
+
+
+  
 
 
 
