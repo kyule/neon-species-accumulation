@@ -98,6 +98,15 @@ for (i in 1:nrow(misIDsubs)){
   }
 }
 
+# Replace sciName for records identified only to family or which are not carabids with NA
+
+removeTaxa<-taxa$sciName[which(taxa$family!="Carabidae")]
+removeTaxa<-c(removeTaxa,taxa$sciName[grep("Carabidae",taxa$sciName)])
+fullData$sciName[-which(fullData$sciName %in% removeTaxa)]<-NA
+
+#save all of the data for other use
+FullAndCleanData<-list(fullData=fullData,field=field,sort=sort,expert=expert,para=para,taxa=taxa)
+save(FullAndCleanData,file=paste0(datapath,"FullAndCleanData.Robj"))
 
 
 

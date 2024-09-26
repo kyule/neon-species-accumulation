@@ -15,9 +15,9 @@ source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
 
 # Load some necessary packages
 library("dplyr")
-library("vegan")
 library("stringr")
 library("iNEXT")
+
 
 #set seed
 set.seed(85705)
@@ -26,56 +26,73 @@ set.seed(85705)
 #Make sure DataCleaning.R is correctly configured
 
 if(NewCleanData==TRUE|file.exists(paste0(datapath,"CleanedData.Robj"))==FALSE){
-  source(paste0(codepath,"DataCleaning.R"))}else{load(file=paste0(datapath,"202409_CleanedData.Robj"))}
+  source(paste0(codepath,"DataCleaningV2.R"))}else{load(file=paste0(datapath,"FullAndCleanData.Robj"))}
 
-# Define data of interest
-fullData<-CleanedData$fullData
-field<-CleanedData$field
+# Pull data of interest
+fullData<-FullAndCleanData$fullData
+fullData$year<-year(fullData$collectDate)
 
-# Define the incidence frequency data tables
+# Create overarching data frame for analysis
 
-sites<-unique(field$siteID)
-
+sites<-unique(fullData$siteID)
 inext<-setNames(vector(mode="list",length=length(sites)),sites)
 
+
+# loop through the field sites
 for (i in 1:length(inext)){
   
-  print(sites[i])
+  print(paste0("START: ", sites[i]))
+  
+  #subset data to the field site of interest and determine the years of analysis
   dat<-fullData[which(fullData$siteID==sites[i]),]
   years<-unique(dat$year)
   
+  # Create list structures for the site
   inext[[i]]<-setNames(vector(mode="list",length=(length(years)+1)),c(years,"full"))
   inc_freq<-setNames(vector(mode="list",length=(length(years)+1)),c(years,"full"))
   
+  # loop through the years of sampling at the site
   for (j in 1:length(years)){
-    print(paste0("     ","year=",years[j]))
+    print(paste(sites[i],years[j]),sep=": ")
+    
+    # pull out the data for the specific year
     datyear<-dat[which(dat$year==years[j]),]
+    
+    # find the unique samples and spp for that year
     samps<-unique(datyear$sampleID)
-    spp<-unique(datyear$taxonID)
+    spp<-unique(datyear$sciName)
     spp<-spp[is.na(spp)==FALSE]
+    
+    inext[[i]][[j]]$traps<-samps
+    inext[[i]][[j]]$spp<-spp
+    
+    # initiate an incidence data frame
     inc<-data.frame(matrix(ncol=length(samps),nrow=length(spp)))
     colnames(inc)<-samps
     rownames(inc)<-spp
     
+    # Input individuals into incidence data frame
     for (k in 1:nrow(inc)){
       for (l in 1:ncol(inc)){
-        inds<-dat$individualCountFinal[which(datyear$sampleID==samps[k] & datyear$taxonID==spp[l])]
+        inds<-dat$finalIndivCount[which(datyear$sampleID==samps[k] & datyear$sciName==spp[l])]
         if (length(inds)>0) {inc[k,l]<-sum(inds)}
       }
     }
     
     inc[is.na(inc)]<-0
-    
     inext[[i]][[j]]$inc<-inc
     
+    # Convert to presence absence
     presabs<-inc
     presabs[presabs>1]<-1
     
+    # Create and save the incidence frequency input data for iNext
     input<-c(ncol(presabs),as.vector(rowSums(presabs)))
     inext[[i]][[j]]$inc_freq<-input
     inc_freq[[j]]<-input
   }
-    print("    FULL")
+  
+  print(paste0(sites[i]," Full Data"))
     samps<-unique(dat$sampleID)
     spp<-unique(dat$taxonID)
     spp<-spp[is.na(spp)==FALSE]
