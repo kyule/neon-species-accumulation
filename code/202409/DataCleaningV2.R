@@ -72,6 +72,32 @@ nrow(misIDs)/nrow(pinned) # total misID rate for all expert ID beetles is ~19%
 #### Propagate correct identifications into main sorting table
 # Note that correcting only the individuals in the sorting table that are explicitly known to be wrong is most conservative in that it maximizes the number of species found within single trap
 
+# choose which subsamples have pinned specimens associated with misidentified individuals and define indiv counts
+misIDsubs<-data.frame(misIDs %>% group_by(subsampleID,sciName.expert,sciName.para) %>% count())
+main$individualCount[is.na(main$individualCount)]<-0
+main$finalIndivCount<-main$individualCount
+
+
+
+# Add new records for misidentified subsample individuals
+
+fullData<-main
+for (i in 1:nrow(misIDsubs)){
+  print(i)
+  # find the matching row
+  row<-which(fullData$subsampleID==misIDsubs$subsampleID[i] & fullData$sciName==misIDsubs$sciName.para[i])
+  # update the main records individual count
+  if(length(row)==1){
+    fullData$finalIndivCount[row]<-fullData$finalIndivCount[row]-misIDsubs$n[i]
+  # create new records
+    newrecords<-fullData[row,]
+    newrecords$sciName<-misIDsubs$sciName.expert[i]
+    newrecords$finalIndivCount<-misIDsubs$n[i]
+  #add new records
+    fullData<-rbind(fullData,newrecords)
+  }
+}
+
 
 
 
