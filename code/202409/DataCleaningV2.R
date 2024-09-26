@@ -64,30 +64,18 @@ pinned<-left_join(expert[c("individualID","sciName")],
                   join_by("individualID"=="individualID"),
                   suffix=c(".expert",".para"))
 
+#### Determine misidentifications
 
-# swap in the actual names for further analysis
-pinned<-left_join(pinned,
-                  taxa[,c("taxonID","taxonRank","scientificName","family","genus","speciesGroup","species","specificEpithet","subspecies")],
-                  join_by("taxonID.expert"=="taxonID"),
-                  suffix=c("",".expert"))
-pinned<-left_join(pinned,
-                  taxa[,c("taxonID","taxonRank","scientificName","family","genus","speciesGroup","species","specificEpithet","subspecies")],
-                  join_by("taxonID.para"=="taxonID"),
-                  suffix=c("",".para"))
+misIDs<-pinned[which(pinned$sciName.expert!=pinned$sciName.para),]
+nrow(misIDs)/nrow(pinned) # total misID rate for all expert ID beetles is ~19%
 
-#### Determine misidentification rates
-
-misIDs.ID<-pinned[which(pinned$taxonID.expert!=pinned$taxonID.para),]
-nrow(misIDs.ID)/nrow(pinned) # total misID rate by taxonCode across all expert ID beetles is ~24%
-
-misIDs.sciname<-pinned[which(pinned$scientificName!=pinned$scientificName.para),]
-nrow(misIDs.sciname)/nrow(pinned) # total misID rate by sciname across all expert ID beetles is ~23%
-
-misIDs.nosubSp<-pinned[which(paste(pinned$genus,pinned$specificEpithet,sep=" ")!=paste(pinned$genus.para,pinned$specificEpithet.para,sep=" ")),]
-nrow(misIDs.nosubSp)/nrow(pinned) # total misID rate at species level across all expert ID beetles is ~19%
+#### Propagate correct identifications into main sorting table
+# Note that correcting only the individuals in the sorting table that are explicitly known to be wrong is most conservative in that it maximizes the number of species found within single trap
 
 
-check<-data.frame(expert=paste(pinned$genus,pinned$specificEpithet,sep=" "),para=paste(pinned$genus.para,pinned$specificEpithet.para,sep=" "))
+
+
+
 
 
 
