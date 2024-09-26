@@ -59,7 +59,8 @@ for (i in 1:length(inext)){
   presabs<-inc
   presabs[presabs>1]<-1
   
-  
+  input<-c(ncol(presabs),as.vector(rowSums(presabs)))
+  out<-iNEXT(input,datatype='incidence_freq',knot=20,endpoint=ncol(presabs)*3)
   
 }
 
