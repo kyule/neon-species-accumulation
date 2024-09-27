@@ -25,7 +25,7 @@ set.seed(85705)
 # Load in the formatted clean data, or download and create it. 
 #Make sure DataCleaning.R is correctly configured
 
-if(NewCleanData==TRUE|file.exists(paste0(datapath,"CleanedData.Robj"))==FALSE){
+if(NewCleanData==TRUE|file.exists(paste0(datapath,"FullAndCleanData.Robj"))==FALSE){
   source(paste0(codepath,"DataCleaningV2.R"))}else{load(file=paste0(datapath,"FullAndCleanData.Robj"))}
 
 # Pull data of interest
@@ -70,16 +70,20 @@ for (i in 1:length(inext)){
     inc<-data.frame(matrix(ncol=length(samps),nrow=length(spp)))
     colnames(inc)<-samps
     rownames(inc)<-spp
+    inc[is.na(inc)]<-0
     
     # Input individuals into incidence data frame
-    for (k in 1:nrow(inc)){
-      for (l in 1:ncol(inc)){
-        inds<-dat$finalIndivCount[which(datyear$sampleID==samps[k] & datyear$sciName==spp[l])]
-        if (length(inds)>0) {inc[k,l]<-sum(inds)}
+    for (k in 1:nrow(datyear)){
+      row<-which(rownames(inc)==datyear$sciName[k])
+      if (length(row)>0){
+        col<-which(colnames(inc)==datyear$sampleID[k])
+        if (length(col)>0){
+          inc[row,col]<-inc[row,col]+datyear$finalIndivCount[k]
+        }
       }
     }
     
-    inc[is.na(inc)]<-0
+    
     inext[[i]][[j]]$inc<-inc
     
     # Convert to presence absence
@@ -92,22 +96,29 @@ for (i in 1:length(inext)){
     inc_freq[[j]]<-input
   }
   
-  print(paste0(sites[i]," Full Data"))
+  # Now do the same across all years of the data
+    print(paste0(sites[i]," Full Data"))
     samps<-unique(dat$sampleID)
-    spp<-unique(dat$taxonID)
+    spp<-unique(dat$sciName)
     spp<-spp[is.na(spp)==FALSE]
     inc<-data.frame(matrix(ncol=length(samps),nrow=length(spp)))
     colnames(inc)<-samps
     rownames(inc)<-spp
+    inc[is.na(inc)]<-0
     
-    for (k in 1:nrow(inc)){
-      for (l in 1:ncol(inc)){
-        inds<-dat$individualCountFinal[which(dat$sampleID==samps[k] & dat$taxonID==spp[l])]
-        if (length(inds)>0) {inc[k,l]<-sum(inds)}
+    inext[[i]][[j+1]]$traps<-samps
+    inext[[i]][[j+1]]$spp<-spp
+    
+    
+    for (k in 1:nrow(dat)){
+      row<-which(rownames(inc)==dat$sciName[k])
+      if (length(row)>0){
+        col<-which(colnames(inc)==dat$sampleID[k])
+        if (length(col)>0){
+          inc[row,col]<-inc[row,col]+dat$finalIndivCount[k]
+        }
       }
     }
-    
-    inc[is.na(inc)]<-0
     
     inext[[i]][[j+1]]$inc<-inc
     
@@ -117,11 +128,14 @@ for (i in 1:length(inext)){
     input<-c(ncol(presabs),as.vector(rowSums(presabs)))
     inext[[i]][[j+1]]$inc_freq<-input
     inc_freq[[j+1]]<-input
-    print(paste0("iNEXT ",sites[i]))
+    
+    # Conduct inext analysis on the communities, each year + the full data are treated as different 'assemblages'
+    print(paste0("****iNEXT analysis: ",sites[i]))
     out<-iNEXT(inc_freq,q=c(0,1,2),datatype='incidence_freq',knot=20,endpoint=ncol(presabs)*3)
     inext[[i]]$out<-out
     
 }
+
 
 
   

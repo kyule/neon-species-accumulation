@@ -96,7 +96,7 @@ out$DataInfo
 out$iNextEst
 out$AsyEst
 
-ggiNEXT(out)
+ggiNEXT(inext$BART$full$inc)
 ggiNEXT(out,type=2)
 ggiNEXT(out,facet.var="Order.q",type=3)
 
