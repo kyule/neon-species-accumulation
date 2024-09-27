@@ -97,6 +97,7 @@ for (i in 1:length(results)){
   #subset data to the field site of interest and determine the years of analysis
   dat<-fullData[which(fullData$siteID==sites[i]),]
   rems<-completeness$year[which(completeness$siteID==sites[i] & completeness$propRem>0.1)]
+  rems<-c(rems,completeness$year[which(completeness$siteID==sites[i] & is.nan(completeness$propRem))])
   # choose to remove years for which more than 10% of the beetles were not identified to a lower resolution than "carabid"
   if (length(rems)>0) {dat<-dat[-which(dat$year %in% rems),]}
   years<-unique(dat$year)
@@ -163,4 +164,4 @@ for (i in 1:length(results)){
     
 }
 
-save()
+save(results,file=paste0(datapath,"results.Robj"))
