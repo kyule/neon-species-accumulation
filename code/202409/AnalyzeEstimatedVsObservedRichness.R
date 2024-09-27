@@ -19,12 +19,17 @@ set.seed(85705)
 # Load some necessary packages
 library("dplyr")
 library("ggplot2")
+library("MASS")
 
 # Load in the formatted clean data, or download and create it. 
 #Make sure the results are correctly configured
 
 if(NewResults==TRUE|file.exists(paste0(datapath,"results.Robj"))==FALSE){
   source(paste0(codepath,"accumulation.R"))}else{load(file=paste0(datapath,"results.Robj"))}
+
+
+# Remove GUAN due to very low sample size
+results<- results[!names(results)=="GUAN"]
 
 # Pull Estimated Asymptotic and Observed Richness Values out of the results list
 
@@ -57,6 +62,13 @@ for (i in 1: nrow(mean.turns)){
   
 }
 
+full.com$propObs<-full.com$Observed/full.com$Estimator
+
+# Take into account the number of years that have been samples
+year.sum <- data.frame(richness %>% group_by(site) %>% summarise(years=(length(year)-1)))
+full.com<-left_join(full.com,year.sum,join_by("site"=="site"))
+
+# Start some basic analyses
 summary(lm(Observed~turnover,full.com))
 plot(Observed~turnover,full.com)
 # No relationship between observed and turnover
@@ -65,26 +77,38 @@ summary(lm(Estimator~turnover,full.com))
 plot(Estimator~turnover,full.com)
 # No relationship between estimated and turnover
 
-hist(full.com$Observed/full.com$Estimator)
-summary(lm(Observed/Estimator~turnover,full.com))
-ggplot(full.com, aes(x = turnover, y = Observed / Estimator, color=as.numeric(Estimator))) +
+summary(glm(propObs~turnover,full.com,family=binomial(link="logit")))
+ggplot(full.com, aes(x = turnover, y = propObs, color=as.numeric(Estimator))) +
   geom_point(size=3) + 
-  geom_smooth(method = "lm", se = FALSE, color = "black") +  # Add linear regression line
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), color = "black") +  # Add linear regression line
   labs(x = "Mean Species Turnover", y = "Prop. Estimated Species Observed") +
   theme_minimal() +
   scale_color_viridis_c(option = "D",name="Est. Richness")
 # negative relationship between turnover and proportion of estimated species richness we have observed
 
 
-summary(lm(Observed/Estimator~Estimator,full.com))
-
-ggplot(full.com, aes(x = Estimator, y = Observed/Estimator, color=as.numeric(turnover))) +
+summary(glm(propObs~Estimator,full.com,family=binomial(link="logit")))
+# negative relationship between estimated spp richness and proportion of estimated species richness we have observed
+ggplot(full.com, aes(x = Estimator, y = propObs, color=as.numeric(turnover))) +
   geom_point(size=3) + 
-  geom_smooth(method = "lm", se = FALSE, color = "black") +  # Add linear regression line
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), color = "black") +  # Add linear regression line
   labs(y = "Prop. Estimated Species Observed", x = "Estimated Richness") +
   theme_minimal() +
   scale_color_viridis_c(option = "D",name="turnover")
-# Positive relationship between observed richness to date, and richness expected to not have been observed yet
+# negative relationship between the proportion observed and the estimated richness overall
 
+summary(glm(propObs~years+turnover,full.com,family=binomial(link="logit")))
+#There is no relationship between the proportion observed and the number of years sampled overall
 
+summary(lm(Estimator~years,full.com))
+# There is however a positive relationship between the estimated richness and the number of years of sampling
+### Because turnover is high, estimated richness becomes larger the more years you sample
 
+summary(glm(propObs~years*Estimator,full.com,family=binomial(link="logit")))
+#Proportion observed decreases with the estimated number of species
+# but that negative effect is decreased with increasing numbers of years of sampling
+
+#Backwards model selection
+
+full.model<-glm(propObs~years*Estimator,full.com,family=binomial(link="logit"))
+aic <- step_AIC(full.model)
