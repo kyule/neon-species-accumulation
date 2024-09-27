@@ -17,6 +17,9 @@ source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
 library("dplyr")
 library("stringr")
 library("iNEXT")
+library("codyn")
+library("reshape")
+library("rarestR")
 
 
 #set seed
@@ -35,11 +38,11 @@ fullData$year<-year(fullData$collectDate)
 # Create overarching data frame for analysis
 
 sites<-unique(fullData$siteID)
-inext<-setNames(vector(mode="list",length=length(sites)),sites)
+results<-setNames(vector(mode="list",length=length(sites)),sites)
 
 
 # loop through the field sites
-for (i in 1:length(inext)){
+for (i in 1:length(results)){
   
   print(paste0("START: ", sites[i]))
   
@@ -48,7 +51,7 @@ for (i in 1:length(inext)){
   years<-unique(dat$year)
   
   # Create list structures for the site
-  inext[[i]]<-setNames(vector(mode="list",length=(length(years)+1)),c(years,"full"))
+  results[[i]]<-setNames(vector(mode="list",length=(length(years)+1)),c(years,"full"))
   inc_freq<-setNames(vector(mode="list",length=(length(years)+1)),c(years,"full"))
   
   # loop through the years of sampling at the site
@@ -63,8 +66,8 @@ for (i in 1:length(inext)){
     spp<-unique(datyear$sciName)
     spp<-spp[is.na(spp)==FALSE]
     
-    inext[[i]][[j]]$traps<-samps
-    inext[[i]][[j]]$spp<-spp
+    results[[i]][[j]]$traps<-samps
+    results[[i]][[j]]$spp<-spp
     
     # initiate an incidence data frame
     inc<-data.frame(matrix(ncol=length(samps),nrow=length(spp)))
@@ -84,7 +87,7 @@ for (i in 1:length(inext)){
     }
     
     
-    inext[[i]][[j]]$inc<-inc
+    results[[i]][[j]]$inc<-inc
     
     # Convert to presence absence
     presabs<-inc
@@ -92,7 +95,7 @@ for (i in 1:length(inext)){
     
     # Create and save the incidence frequency input data for iNext
     input<-c(ncol(presabs),as.vector(rowSums(presabs)))
-    inext[[i]][[j]]$inc_freq<-input
+    results[[i]][[j]]$inc_freq<-input
     inc_freq[[j]]<-input
   }
   
@@ -106,8 +109,8 @@ for (i in 1:length(inext)){
     rownames(inc)<-spp
     inc[is.na(inc)]<-0
     
-    inext[[i]][[j+1]]$traps<-samps
-    inext[[i]][[j+1]]$spp<-spp
+    results[[i]][[j+1]]$traps<-samps
+    results[[i]][[j+1]]$spp<-spp
     
     
     for (k in 1:nrow(dat)){
@@ -120,19 +123,51 @@ for (i in 1:length(inext)){
       }
     }
     
-    inext[[i]][[j+1]]$inc<-inc
+    results[[i]][[j+1]]$inc<-inc
     
     presabs<-inc
     presabs[presabs>1]<-1
     
     input<-c(ncol(presabs),as.vector(rowSums(presabs)))
-    inext[[i]][[j+1]]$inc_freq<-input
+    results[[i]][[j+1]]$inc_freq<-input
     inc_freq[[j+1]]<-input
+    results[[i]]$inc_freq<-inc_freq
     
-    # Conduct inext analysis on the communities, each year + the full data are treated as different 'assemblages'
+    # Conduct results analysis on the communities, each year + the full data are treated as different 'assemblages'
     print(paste0("****iNEXT analysis: ",sites[i]))
-    out<-iNEXT(inc_freq,q=c(0,1,2),datatype='incidence_freq',knot=20,endpoint=ncol(presabs)*3)
-    inext[[i]]$out<-out
+    out<-try({
+      iNEXT(inc_freq,q=c(0,1,2),datatype='incidence_freq',knot=20,endpoint=ncol(presabs)*3)},
+      silent=TRUE)
+    if (inherits(out, "try-error")) {
+      results[[i]]$out <- paste("Error")
+    } else {
+      results[[i]]$out<-out
+    }
+    
+    
+    ### Calculate turnover measures
+    
+    print(paste0("turnover: ",sites[i]))
+    turnover.df<-data.frame(dat %>% group_by(year,sciName) %>% summarise(count=sum(finalIndivCount)))
+    turnover.df<-turnover.df[turnover.df$count>=1,]
+    total<-turnover(turnover.df,time.var="year",species.var="sciName",abundance.var="count",metric="total")
+    appear<-turnover(turnover.df,time.var="year",species.var="sciName",abundance.var="count",metric="appearance")
+    disappear<-turnover(turnover.df,time.var="year",species.var="sciName",abundance.var="count",metric="disappearance")
+    turnover<-left_join(total,appear,join_by("year"=="year"))
+    turnover<-left_join(turnover,disappear,join_by("year"=="year"))
+    
+    results[[i]]$turnover<-turnover
+    
+    # dissimilarity measures
+    
+    print(paste0("dissimilarity: ",sites[i]))
+    dat$siteyear<-paste(dat$siteID,dat$year,sep="_")
+    dis.dat<-data.frame(dat %>% group_by(siteyear,sciName) %>% summarise(n=sum(finalIndivCount)))
+    dis.dat<-dis.dat[which(dis.dat$n>0),]
+    dis.dat<-acast(dis.dat, siteyear~sciName, value.var="n")
+    dissim<-ess(dis.dat)
+    
+    results[[i]]$dissim<-dissim
     
 }
 

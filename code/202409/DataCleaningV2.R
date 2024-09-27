@@ -102,7 +102,7 @@ for (i in 1:nrow(misIDsubs)){
 
 removeTaxa<-taxa$sciName[which(taxa$family!="Carabidae")]
 removeTaxa<-c(removeTaxa,taxa$sciName[grep("Carabidae",taxa$sciName)])
-fullData$sciName[-which(fullData$sciName %in% removeTaxa)]<-NA
+fullData$sciName[which(fullData$sciName %in% removeTaxa)]<-NA
 
 #save all of the data for other use
 FullAndCleanData<-list(fullData=fullData,field=field,sort=sort,expert=expert,para=para,taxa=taxa)
