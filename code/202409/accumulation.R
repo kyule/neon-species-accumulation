@@ -35,6 +35,53 @@ if(NewCleanData==TRUE|file.exists(paste0(datapath,"FullAndCleanData.Robj"))==FAL
 fullData<-FullAndCleanData$fullData
 fullData$year<-year(fullData$collectDate)
 
+# Function for creating incidence data frame
+
+inc_data<-function(input.data){
+  
+  # find the unique samples and spp for that year
+  samps<-unique(input.data$sampleID)
+  spp<-unique(input.data$sciName)
+  spp<-spp[is.na(spp)==FALSE]
+  
+  return.df<-list()
+  
+  return.df$traps<-samps
+  return.df$spp<-spp
+  
+  # initiate an incidence data frame
+  inc<-data.frame(matrix(ncol=length(samps),nrow=length(spp)))
+  colnames(inc)<-samps
+  rownames(inc)<-spp
+  inc[is.na(inc)]<-0
+  
+  # Input individuals into incidence data frame
+  for (k in 1:nrow(input.data)){
+    row<-which(rownames(inc)==input.data$sciName[k])
+    if (length(row)>0){
+      col<-which(colnames(inc)==input.data$sampleID[k])
+      if (length(col)>0){
+        inc[row,col]<-inc[row,col]+input.data$finalIndivCount[k]
+      }
+    }
+  }
+  
+  
+  return.df$inc<-inc
+  
+  # Convert to presence absence
+  presabs<-inc
+  presabs[presabs>1]<-1
+  
+  # Create and save the incidence frequency input data for iNext
+  input<-c(ncol(presabs),as.vector(rowSums(presabs)))
+  return.df$inc_freq<-input
+  
+  return(return.df)
+  
+}
+
+
 # Create overarching data frame for analysis
 
 sites<-unique(fullData$siteID)
@@ -54,86 +101,27 @@ for (i in 1:length(results)){
   results[[i]]<-setNames(vector(mode="list",length=(length(years)+1)),c(years,"full"))
   inc_freq<-setNames(vector(mode="list",length=(length(years)+1)),c(years,"full"))
   
-  # loop through the years of sampling at the site
+  
   for (j in 1:length(years)){
+    # loop through the years of sampling at the site
     print(paste(sites[i],years[j]),sep=": ")
     
     # pull out the data for the specific year
     datyear<-dat[which(dat$year==years[j]),]
     
-    # find the unique samples and spp for that year
-    samps<-unique(datyear$sampleID)
-    spp<-unique(datyear$sciName)
-    spp<-spp[is.na(spp)==FALSE]
+    # results by year
+    results[[i]][[j]]<-inc_data(datyear)
+    inc_freq[[j]]<-results[[i]][[j]]$inc_freq
     
-    results[[i]][[j]]$traps<-samps
-    results[[i]][[j]]$spp<-spp
-    
-    # initiate an incidence data frame
-    inc<-data.frame(matrix(ncol=length(samps),nrow=length(spp)))
-    colnames(inc)<-samps
-    rownames(inc)<-spp
-    inc[is.na(inc)]<-0
-    
-    # Input individuals into incidence data frame
-    for (k in 1:nrow(datyear)){
-      row<-which(rownames(inc)==datyear$sciName[k])
-      if (length(row)>0){
-        col<-which(colnames(inc)==datyear$sampleID[k])
-        if (length(col)>0){
-          inc[row,col]<-inc[row,col]+datyear$finalIndivCount[k]
-        }
-      }
-    }
-    
-    
-    results[[i]][[j]]$inc<-inc
-    
-    # Convert to presence absence
-    presabs<-inc
-    presabs[presabs>1]<-1
-    
-    # Create and save the incidence frequency input data for iNext
-    input<-c(ncol(presabs),as.vector(rowSums(presabs)))
-    results[[i]][[j]]$inc_freq<-input
-    inc_freq[[j]]<-input
   }
   
-  # Now do the same across all years of the data
+  # Now do the same across the full data for the site
     print(paste0(sites[i]," Full Data"))
-    samps<-unique(dat$sampleID)
-    spp<-unique(dat$sciName)
-    spp<-spp[is.na(spp)==FALSE]
-    inc<-data.frame(matrix(ncol=length(samps),nrow=length(spp)))
-    colnames(inc)<-samps
-    rownames(inc)<-spp
-    inc[is.na(inc)]<-0
     
-    results[[i]][[j+1]]$traps<-samps
-    results[[i]][[j+1]]$spp<-spp
+    results[[i]][[j+1]]<-inc_data(dat)
+    inc_freq[[j+1]]<-results[[i]][[j+1]]$inc_freq
     
-    
-    for (k in 1:nrow(dat)){
-      row<-which(rownames(inc)==dat$sciName[k])
-      if (length(row)>0){
-        col<-which(colnames(inc)==dat$sampleID[k])
-        if (length(col)>0){
-          inc[row,col]<-inc[row,col]+dat$finalIndivCount[k]
-        }
-      }
-    }
-    
-    results[[i]][[j+1]]$inc<-inc
-    
-    presabs<-inc
-    presabs[presabs>1]<-1
-    
-    input<-c(ncol(presabs),as.vector(rowSums(presabs)))
-    results[[i]][[j+1]]$inc_freq<-input
-    inc_freq[[j+1]]<-input
-    results[[i]]$inc_freq<-inc_freq
-    
-    # Conduct results analysis on the communities, each year + the full data are treated as different 'assemblages'
+    # Conduct analysis on the communities, each year + the full data are treated as different 'assemblages'
     print(paste0("****iNEXT analysis: ",sites[i]))
     out<-try({
       iNEXT(inc_freq,q=c(0,1,2),datatype='incidence_freq',knot=20,endpoint=ncol(presabs)*3)},

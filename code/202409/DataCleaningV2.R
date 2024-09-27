@@ -98,10 +98,26 @@ for (i in 1:nrow(misIDsubs)){
   }
 }
 
-# Replace sciName for records identified only to family or which are not carabids with NA
+
+
+# Identify sciNames to remove
 
 removeTaxa<-taxa$sciName[which(taxa$family!="Carabidae")]
 removeTaxa<-c(removeTaxa,taxa$sciName[grep("Carabidae",taxa$sciName)])
+
+# Determine number of traps by year, proportion of individuals not sufficiently ID'd, and error rate by site x year combo
+
+field<-field[which(field$sampleCollected=="Y"),]
+field$year<-year(field$collectDate)
+completeness<-data.frame(field %>% group_by(siteID,year) %>% summarise(traps=length(unique(sampleID))))
+
+fullData$year<-year(fullData$collectDate)
+sum.fullTaxa<-data.frame(fullData %>% group_by(siteID,year) %>% summarise(all=sum(finalIndivCount),rems=sum(finalIndivCount[which(sciName %in% removeTaxa)])))
+sum.fullTaxa$propRem<-sum.fullTaxa$rems/sum.fullTaxa$all
+
+completeness<-full_join(completeness,sum.fullTaxa,join_by("siteID"=="siteID","year"=="year"))
+
+# Replace sciName for records identified only to family or which are not carabids with NA
 fullData$sciName[which(fullData$sciName %in% removeTaxa)]<-NA
 
 #save all of the data for other use
