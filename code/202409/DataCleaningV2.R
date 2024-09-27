@@ -121,12 +121,6 @@ completeness<-full_join(completeness,sum.fullTaxa,join_by("siteID"=="siteID","ye
 fullData$sciName[which(fullData$sciName %in% removeTaxa)]<-NA
 
 #save all of the data for other use
-FullAndCleanData<-list(fullData=fullData,field=field,sort=sort,expert=expert,para=para,taxa=taxa)
+FullAndCleanData<-list(fullData=fullData,field=field,sort=sort,expert=expert,para=para,taxa=taxa,completeness=completeness)
 save(FullAndCleanData,file=paste0(datapath,"FullAndCleanData.Robj"))
-
-
-
-
-
-
 

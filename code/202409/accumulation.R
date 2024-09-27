@@ -33,7 +33,8 @@ if(NewCleanData==TRUE|file.exists(paste0(datapath,"FullAndCleanData.Robj"))==FAL
 
 # Pull data of interest
 fullData<-FullAndCleanData$fullData
-fullData$year<-year(fullData$collectDate)
+completeness<-FullAndCleanData$completeness
+
 
 # Function for creating incidence data frame
 
@@ -95,6 +96,9 @@ for (i in 1:length(results)){
   
   #subset data to the field site of interest and determine the years of analysis
   dat<-fullData[which(fullData$siteID==sites[i]),]
+  rems<-completeness$year[which(completeness$siteID==sites[i] & completeness$propRem>0.1)]
+  # choose to remove years for which more than 10% of the beetles were not identified to a lower resolution than "carabid"
+  if (length(rems)>0) {dat<-dat[-which(dat$year %in% rems),]}
   years<-unique(dat$year)
   
   # Create list structures for the site
@@ -158,12 +162,5 @@ for (i in 1:length(results)){
     results[[i]]$dissim<-dissim
     
 }
-
-
-
-  
-
-
-
 
 
