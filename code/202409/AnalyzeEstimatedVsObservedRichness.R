@@ -111,13 +111,17 @@ inext <- bind_rows(inext.list,.id="site")
 inext <- inext %>% filter(Order.q==0)
 
 thresh90<-data.frame(site=full.com$site,thresh=full.com$Estimator*0.90)
-trapAvg<-data.frame(completeness %>% group_by(site) %>% )
+trapAvg<-data.frame(completeness %>% group_by(siteID) %>% summarise(trapno=mean(traps)))
+thresh90<-left_join(thresh90,trapAvg,join_by("site"=="siteID"))
 
 
 ggplot(inext, aes(x = t, y = qD, color=site , group=site)) +
   geom_line() +
   labs(x = "Number of Traps", y = "Estimated Richness") +
-  theme_minimal()
+  theme_minimal() +
+  scale_color_brewer(palette = "Set1") +
+  geom_hline(data = thresh90, aes(yintercept = thresh, color = site), linetype = "dashed")
+  
 
 
 
