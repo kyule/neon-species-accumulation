@@ -27,17 +27,17 @@ library("MASS")
 if(NewResults==TRUE|file.exists(paste0(datapath,"results.Robj"))==FALSE){
   source(paste0(codepath,"accumulation.R"))}else{load(file=paste0(datapath,"resultsFull.Robj"))}
 
-
-# Remove GUAN due to very low 
+# Remove GUAN due to very low number of beetles captured. 
+### Only 36 beetles in 7 years of sampling, almost complete turnover in communities between most years
 results<- results[!names(results)=="GUAN"]
 
-# Pull Estimated Asymptotic and Observed Richness Values out of the results list -- full data only
+### Pull Estimated Asymptotic and Observed Richness Values out of the results list -- full data only
 
 asyest.list<-lapply(results,function(item) data.frame(item$full$out$AsyEst))
 asyest <- bind_rows(asyest.list,.id="site")
 richness <- asyest[grep("Richness",rownames(asyest)),]
 
-# Pull the turnovers out of the results list and input into the richness data frame
+#### Pull the turnovers out of the results list and input into the richness data frame
 
 turnover.list<-lapply(results,function(item) data.frame(item$turnover))
 turnover.list <- bind_rows(turnover.list,.id="site")
@@ -49,62 +49,34 @@ full.com <- left_join(richness,turnover,join_by("site"=="site"))
 full.com$propObs<-full.com$Observed/full.com$Estimator
 
 # Take into account the number of traps that have been sampled
-
 trap.list<-lapply(results,function(item) nrow(data.frame(item$full$traps)))
 trap.list <- melt(trap.list)
 names(trap.list)<-c("traps","site")
 full.com<-left_join(full.com,trap.list,join_by("site"=="site"))
 
-# Start some basic analyses
+#### Start some basic analyses
 summary(lm(Observed~turnover*years,full.com))
 plot(Observed~turnover,full.com)
-# No relationship between observed and turnover
+# No relationship between observed and turnover or number of years
 
-summary(lm(Estimator~turnover,full.com))
+summary(lm(Estimator~turnover*years,full.com))
 plot(Estimator~turnover,full.com)
-# Estimated diversity increases with species turnover
+# No relationship between est and turnover or number of years
 
 
-summary(glm(propObs~turnover,full.com,family=quasibinomial(link="logit")))
-
+### Proportion observed analyses
 ggplot(full.com, aes(x = turnover, y = propObs, color=as.numeric(Estimator))) +
-  geom_point(aes(size=traps)) + 
-  geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +  # Add linear regression line
+  geom_point(aes(size=years)) + 
+  geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +  
   labs(x = "Mean Species Turnover", y = "Prop. Estimated Species Observed") +
   theme_minimal() +
   scale_color_viridis_c(option = "D",name="Est. Richness")
 # negative relationship between turnover and proportion of estimated species richness we have observed
 
 
-summary(glm(propObs~Estimator,full.com,family=quasibinomial(link="logit")))
-# negative relationship between estimated spp richness and proportion of estimated species richness we have observed
-ggplot(full.com, aes(x = Estimator, y = propObs, color=as.numeric(turnover))) +
-  geom_point(size=3) + 
-  geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +  # Add linear regression line
-  labs(y = "Prop. Estimated Species Observed", x = "Estimated Richness") +
-  theme_minimal() +
-  scale_color_viridis_c(option = "D",name="turnover")
-# negative relationship between the proportion observed and the estimated richness overall
-
-summary(glm(propObs~years+turnover,full.com,family=quasibinomial(link="logit")))
-
-
-summary(lm(Estimator~years,full.com))
-#estimated richness increases with years of sampling
-
-fullmodel<-glm(propObs~years*Estimator*turnover*traps,full.com,family=quasibinomial(link="logit"))
-summary(fullmodel)
-
-library(caret)
-train_control <- trainControl(method = "cv", number = 10)
-model <- train(propObs~years*Estimator*turnover,full.com, method = "glmnet",family="quasibinomial", trControl = train_control)
-summary(model)
-
-
-# Fit two models: a simpler model and a more complex one
+# Likelihood ratio test to determine best models of proportion observed
 model_full <- glm(propObs ~ years * turnover * Estimator, family = quasibinomial, data = full.com)
 model_reduced <- glm(propObs ~ years + turnover + Estimator + years:turnover + years:Estimator + turnover:Estimator, family = quasibinomial, data = full.com)
-# Perform a likelihood ratio test
 anova(model_reduced, model_full, test = "Chisq")
 summary(model_reduced)
 
@@ -119,14 +91,16 @@ summary(model_reduced3)
 model_reduced4 <- glm(propObs ~ years + turnover + Estimator  , family = quasibinomial, data = full.com)
 anova(model_reduced4, model_reduced3, test = "Chisq")
 summary(model_reduced4)
-### The best model says that the proportion of estimated species that have been observed increases with number of years of sampling, decreases with average year-to-year species turnover, and decreases with the number of species that have been estimated
+### The best model says that the proportion of estimated species that have been observed increases with number of years 
+    #of sampling, decreases with average year-to-year species turnover, and 
+    #decreases with the number of species that have been estimated
+
+### Plot observed vs Estimated with errors around variance
+ggplot(,full.comm)
 
 
 
 
-summary(lm(Estimator~traps,full.com))
-plot(Estimator~traps,full.com)
-# The more traps you have total the more species you estimate
 
 
 ### Find sampling required to reach 90% diversity
@@ -216,7 +190,8 @@ ggplot(inext, aes(x = byYears, y = qD, color=site , group=site)) +
   geom_hline(data = thresh90, aes(yintercept = thresh, color = site), linetype = "dashed") +
   geom_point(data = intersections, aes(x = t, y = qD), color = "black", size = 2) 
 
-  
+
+
 # Turnover relates to number of years?
 
 thresh90<-left_join(thresh90,turnover,join_by("site"=="site"))
