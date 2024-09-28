@@ -25,11 +25,11 @@ library("MASS")
 #Make sure the results are correctly configured
 
 if(NewResults==TRUE|file.exists(paste0(datapath,"results.Robj"))==FALSE){
-  source(paste0(codepath,"accumulation.R"))}else{load(file=paste0(datapath,"results.Robj"))}
+  source(paste0(codepath,"accumulation.R"))}else{load(file=paste0(datapath,"resultsFull.Robj"))}
 
 
-# Remove GUAN due to very low sample size
-#results<- results[!names(results)=="GUAN"]
+# Remove GUAN due to very low 
+results<- results[!names(results)=="GUAN"]
 
 # Pull Estimated Asymptotic and Observed Richness Values out of the results list -- full data only
 
@@ -56,44 +56,73 @@ names(trap.list)<-c("traps","site")
 full.com<-left_join(full.com,trap.list,join_by("site"=="site"))
 
 # Start some basic analyses
-summary(lm(Observed~turnover,full.com))
+summary(lm(Observed~turnover*years,full.com))
 plot(Observed~turnover,full.com)
 # No relationship between observed and turnover
 
 summary(lm(Estimator~turnover,full.com))
 plot(Estimator~turnover,full.com)
+# Estimated diversity increases with species turnover
 
 
-summary(glm(propObs~turnover,full.com,family=binomial(link="logit")))
+summary(glm(propObs~turnover,full.com,family=quasibinomial(link="logit")))
 
 ggplot(full.com, aes(x = turnover, y = propObs, color=as.numeric(Estimator))) +
   geom_point(aes(size=traps)) + 
-  geom_smooth(method = "glm", method.args = list(family = "binomial"), color = "black") +  # Add linear regression line
+  geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +  # Add linear regression line
   labs(x = "Mean Species Turnover", y = "Prop. Estimated Species Observed") +
   theme_minimal() +
   scale_color_viridis_c(option = "D",name="Est. Richness")
 # negative relationship between turnover and proportion of estimated species richness we have observed
 
 
-summary(glm(propObs~Estimator,full.com,family=binomial(link="logit")))
+summary(glm(propObs~Estimator,full.com,family=quasibinomial(link="logit")))
 # negative relationship between estimated spp richness and proportion of estimated species richness we have observed
 ggplot(full.com, aes(x = Estimator, y = propObs, color=as.numeric(turnover))) +
   geom_point(size=3) + 
-  geom_smooth(method = "glm", method.args = list(family = "binomial"), color = "black") +  # Add linear regression line
+  geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +  # Add linear regression line
   labs(y = "Prop. Estimated Species Observed", x = "Estimated Richness") +
   theme_minimal() +
   scale_color_viridis_c(option = "D",name="turnover")
 # negative relationship between the proportion observed and the estimated richness overall
 
-summary(glm(propObs~years+turnover,full.com,family=binomial(link="logit")))
-#There is no relationship between the proportion observed and the number of years sampled overall
+summary(glm(propObs~years+turnover,full.com,family=quasibinomial(link="logit")))
+
 
 summary(lm(Estimator~years,full.com))
 #estimated richness increases with years of sampling
 
-fullmodel<-glm(propObs~years*Estimator*turnover,full.com,family=binomial(link="logit"))
-stepaic<-stepAIC(fullmodel,direction="both")
-summary(stepaic)
+fullmodel<-glm(propObs~years*Estimator*turnover*traps,full.com,family=quasibinomial(link="logit"))
+summary(fullmodel)
+
+library(caret)
+train_control <- trainControl(method = "cv", number = 10)
+model <- train(propObs~years*Estimator*turnover,full.com, method = "glmnet",family="quasibinomial", trControl = train_control)
+summary(model)
+
+
+# Fit two models: a simpler model and a more complex one
+model_full <- glm(propObs ~ years * turnover * Estimator, family = quasibinomial, data = full.com)
+model_reduced <- glm(propObs ~ years + turnover + Estimator + years:turnover + years:Estimator + turnover:Estimator, family = quasibinomial, data = full.com)
+# Perform a likelihood ratio test
+anova(model_reduced, model_full, test = "Chisq")
+summary(model_reduced)
+
+model_reduced2 <- glm(propObs ~ years + turnover + Estimator +  years:Estimator + turnover:Estimator, family = quasibinomial, data = full.com)
+anova(model_reduced2, model_reduced, test = "Chisq")
+summary(model_reduced2)
+
+model_reduced3 <- glm(propObs ~ years + turnover + Estimator +  years:Estimator , family = quasibinomial, data = full.com)
+anova(model_reduced3, model_reduced2, test = "Chisq")
+summary(model_reduced3)
+
+model_reduced4 <- glm(propObs ~ years + turnover + Estimator  , family = quasibinomial, data = full.com)
+anova(model_reduced4, model_reduced3, test = "Chisq")
+summary(model_reduced4)
+### The best model says that the proportion of estimated species that have been observed increases with number of years of sampling, decreases with average year-to-year species turnover, and decreases with the number of species that have been estimated
+
+
+
 
 summary(lm(Estimator~traps,full.com))
 plot(Estimator~traps,full.com)

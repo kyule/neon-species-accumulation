@@ -1,4 +1,4 @@
-### This is the primary file for analyzing NEON species accumulation data
+### This is the primary file for creating site based results necessary for NEON species accumulation work
 
 #### BEFORE RUNNING
 # Users must define their own paths
@@ -7,9 +7,9 @@
 # codepath<-"user defined path"
 
 # Use provisional?
-provisional<-TRUE
-skipYearlyiNext<-TRUE
-skipAllYeariNext<-TRUE
+provisional<-FALSE
+skipYearlyiNext<-FALSE
+skipAllYeariNext<-FALSE
 
 # Users need to indicate whether they want to load or re-download and format the NEON data 
 # These these steps are very time consuming so it is recommended that they are only done if necessary
@@ -26,14 +26,13 @@ library("codyn")
 library("reshape2")
 library("rarestR")
 
-
 #set seed
 set.seed(85705)
 
 # Load in the formatted clean data, or download and create it. 
 #Make sure DataCleaningV2.R is correctly configured
 
-if(provisional==FALSE|NewCleanData==TRUE|file.exists(paste0(datapath,"FullAndCleanData.Robj"))==FALSE){
+if(NewCleanData==TRUE|file.exists(paste0(datapath,"FullAndCleanData.Robj"))==FALSE){
   source(paste0(codepath,"DataCleaningV2.R"))}else{load(file=paste0(datapath,"FullAndCleanData.Robj"))}
 
 if(provisional==TRUE){load(file="/Users/kelsey/Github/neon-species-accumulation/data/testIncludingProvisional/FullAndCleanedData.Robj")}
@@ -41,7 +40,6 @@ if(provisional==TRUE){load(file="/Users/kelsey/Github/neon-species-accumulation/
 # Pull data of interest
 fullData<-FullAndCleanData$fullData
 completeness<-FullAndCleanData$completeness
-
 
 # Function for creating incidence data frame
 
@@ -102,12 +100,10 @@ inc_data<-function(input.data){
   
 }
 
-
 # Create overarching data frame for analysis
 
 sites<-unique(fullData$siteID)
 results<-setNames(vector(mode="list",length=length(sites)),sites)
-
 
 # loop through the field sites
 for (i in 1:length(results)){
@@ -185,4 +181,4 @@ for (i in 1:length(results)){
     
 }
 
-save(results,file=paste0(datapath,"results.Robj"))
+save(results,file=paste0(datapath,"resultsFull.Robj"))
