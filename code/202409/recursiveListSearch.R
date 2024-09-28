@@ -7,7 +7,6 @@ results <- list(
 
 
 find_out <- function(lst) {
-  if (is.list(lst)) {
     # Check if the list has an element named "out"
     if ("out" %in% names(lst)) {
       return(lst$out)
@@ -15,7 +14,6 @@ find_out <- function(lst) {
       # Recursively search all elements of the list
       return(unlist(lapply(lst, find_out)))
     }
-  }
   return(NULL)
 }
 

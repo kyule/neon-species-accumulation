@@ -18,7 +18,7 @@ library("dplyr")
 library("stringr")
 library("iNEXT")
 library("codyn")
-library("reshape")
+library("reshape2")
 library("rarestR")
 
 
