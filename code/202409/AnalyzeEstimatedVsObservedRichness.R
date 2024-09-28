@@ -46,7 +46,6 @@ turnover<-data.frame(turnover.list %>%
                        summarise(turnover=mean(total,na.rm=TRUE),years=length(year)))
 full.com <- left_join(richness,turnover,join_by("site"=="site"))
 
-
 full.com$propObs<-full.com$Observed/full.com$Estimator
 
 # Take into account the number of traps that have been sampled
@@ -59,13 +58,9 @@ summary(lm(Observed~turnover,full.com))
 plot(Observed~turnover,full.com)
 # No relationship between observed and turnover
 
-summary(lm(Observed~turnover,full.com))
-plot(Observed~turnover,full.com)
-# No relationship between observed and turnover
-
 summary(lm(Estimator~turnover,full.com))
 plot(Estimator~turnover,full.com)
-# No relationship between estimated and turnover
+# Estimated increases with turnover #
 
 summary(glm(propObs~turnover,full.com,family=binomial(link="logit")))
 
@@ -92,15 +87,15 @@ summary(glm(propObs~years+turnover,full.com,family=binomial(link="logit")))
 #There is no relationship between the proportion observed and the number of years sampled overall
 
 summary(lm(Estimator~years,full.com))
-# There is however a positive relationship between the estimated richness and the number of years of sampling
-### Because turnover is high, estimated richness becomes larger the more years you sample
+#estimated richness increases with years of sampling
 
-summary(glm(propObs~years*Estimator,full.com,family=binomial(link="logit")))
-#Proportion observed decreases with the estimated number of species
-# but that negative effect is decreased with increasing numbers of years of sampling
+fullmodel<-glm(propObs~years*Estimator*turnover,full.com,family=binomial(link="logit"))
+stepaic<-stepAIC(fullmodel,direction="both")
+summary(stepaic)
 
 summary(lm(Estimator~traps,full.com))
 plot(Estimator~traps,full.com)
+
 
 ### Find sampling required to reach 90% diversity
 
@@ -115,7 +110,7 @@ trapAvg<-data.frame(completeness %>% group_by(siteID) %>% summarise(trapno=mean(
 thresh90<-left_join(thresh90,trapAvg,join_by("site"=="siteID"))
 
 # Find intersections
-find_intersections <- function(df, thresh,metric) {
+find_intersections <- function(df,thresh,metric) {
   site_data <- df[df$site == thresh$site, ]
   
   # Loop through data and check for crossings
@@ -149,8 +144,10 @@ find_intersections <- function(df, thresh,metric) {
 
 # Get all intersections 
 intersections <- do.call(rbind, lapply(1:nrow(thresh90), function(i) {
-  find_intersections(inext, thresh90[i, ])
+  find_intersections(inext, thresh90[i, ],"t")
 }))
+
+
 
 
 ggplot(inext, aes(x = t, y = qD, color=site , group=site)) +
@@ -159,7 +156,7 @@ ggplot(inext, aes(x = t, y = qD, color=site , group=site)) +
   theme_minimal() +
   scale_color_brewer(palette = "Set1") +
   geom_hline(data = thresh90, aes(yintercept = thresh, color = site), linetype = "dashed") +
-  geom_point(data = intersections, aes(x = t, y = qD), color = "black", size = 2) 
+  geom_point(data = intersections, aes(x = t, y = qD), color = "darkgrey", size = 2) 
 
 #Calculate the number of years based on recent per year sampling effort
 
@@ -188,7 +185,11 @@ ggplot(inext, aes(x = byYears, y = qD, color=site , group=site)) +
   geom_point(data = intersections, aes(x = t, y = qD), color = "black", size = 2) 
 
   
-  
+# Turnover relates to number of years?
+
+thresh90<-left_join(thresh90,turnover,join_by("site"=="site"))
+
+summary(lm(yearsReq~turnover,thresh90))
 
 
 

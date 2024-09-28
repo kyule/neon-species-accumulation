@@ -6,6 +6,11 @@
 # datapath<-"user defined path"
 # codepath<-"user defined path"
 
+# Use provisional?
+provisional<-TRUE
+skipYearlyiNext<-TRUE
+skipAllYeariNext<-TRUE
+
 # Users need to indicate whether they want to load or re-download and format the NEON data 
 # These these steps are very time consuming so it is recommended that they are only done if necessary
 NewCleanData<-FALSE
@@ -26,10 +31,12 @@ library("rarestR")
 set.seed(85705)
 
 # Load in the formatted clean data, or download and create it. 
-#Make sure DataCleaning.R is correctly configured
+#Make sure DataCleaningV2.R is correctly configured
 
-if(NewCleanData==TRUE|file.exists(paste0(datapath,"FullAndCleanData.Robj"))==FALSE){
+if(provisional==FALSE|NewCleanData==TRUE|file.exists(paste0(datapath,"FullAndCleanData.Robj"))==FALSE){
   source(paste0(codepath,"DataCleaningV2.R"))}else{load(file=paste0(datapath,"FullAndCleanData.Robj"))}
+
+if(provisional==TRUE){load(file="/Users/kelsey/Github/neon-species-accumulation/data/testIncludingProvisional/FullAndCleanedData.Robj")}
 
 # Pull data of interest
 fullData<-FullAndCleanData$fullData
@@ -79,13 +86,16 @@ inc_data<-function(input.data){
   return.df$inc_freq<-input
   
   #iNext results
+  
+  if (skipYearlyiNext==FALSE|(length(unique(input.data$year))>1)){
   out<-try({
-    iNEXT(input,q=c(0,1,2),datatype='incidence_freq',knot=30,endpoint=ncol(presabs)*3)},
+    iNEXT(input,q=c(0,1,2),datatype='incidence_freq',knot=30,endpoint=ncol(presabs)*10)},
     silent=TRUE)
   if (inherits(out, "try-error")) {
     return.df$out <- paste("Error")
   } else {
     return.df$out<-out
+  }
   }
   
   return(return.df)
@@ -138,6 +148,7 @@ for (i in 1:length(results)){
     
     # Conduct analysis on the communities, each year + the full data are treated as different 'assemblages'
     # All assemblages
+    if (skipAllYeariNext==FALSE){
     out<-try({
       iNEXT(inc_freq,q=c(0,1,2),datatype='incidence_freq',knot=30,endpoint=6000)},
       silent=TRUE)
@@ -146,7 +157,7 @@ for (i in 1:length(results)){
     } else {
       results[[i]]$out<-out
     }
-    
+    }
     
     ### Calculate turnover measures
     
