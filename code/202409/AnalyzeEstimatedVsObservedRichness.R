@@ -31,42 +31,23 @@ if(NewResults==TRUE|file.exists(paste0(datapath,"results.Robj"))==FALSE){
 # Remove GUAN due to very low sample size
 results<- results[!names(results)=="GUAN"]
 
-# Pull Estimated Asymptotic and Observed Richness Values out of the results list
+# Pull Estimated Asymptotic and Observed Richness Values out of the results list -- full data only
 
-asyest.list<-lapply(results,function(item) data.frame(item$out$AsyEst))
+asyest.list<-lapply(results,function(item) data.frame(item$full$out$AsyEst))
 asyest <- bind_rows(asyest.list,.id="site")
-richness <- asyest %>% filter(Diversity=="Species richness")
-richness$Assemblage[which(richness$Assemblage=="full")]<-"0"
-richness$Assemblage<-as.numeric(richness$Assemblage)
+richness <- asyest[grep("Richness",rownames(asyest)),]
 
 # Pull the turnovers out of the results list and input into the richness data frame
 
 turnover.list<-lapply(results,function(item) data.frame(item$turnover))
-turnover <- bind_rows(turnover.list,.id="site")
-richness <- left_join(richness,turnover,join_by("site"=="site","Assemblage"=="year"))
-richness<- richness %>% dplyr::rename(year=Assemblage) %>% dplyr::rename(turnover=total)
+turnover.list <- bind_rows(turnover.list,.id="site")
+turnover<-data.frame(turnover.list %>% 
+                       group_by(site) %>% 
+                       summarise(turnover=mean(total,na.rm=TRUE),years=length(year)))
+full.com <- left_join(richness,turnover,join_by("site"=="site"))
 
-# Full community only analysis: Richness Vs Turnover
-full.com<-richness[which(richness$year==0),]
-# Give Average +/- se turnover per site
-mean.turns<-richness %>% group_by(site) %>% 
-  summarise(turn=mean(turnover,na.rm=TRUE),
-            sd.turn = ifelse(sum(!is.na(turnover)) > 1, sd(turnover, na.rm = TRUE), NA)
-  )
-
-full.com$sd.turn<-NA
-
-for (i in 1: nrow(mean.turns)){
-  full.com$turnover[which(full.com$year==0 & full.com$site==mean.turns$site[i])]<-mean.turns$turn[i]
-  full.com$sd.turn[which(full.com$year==0 & full.com$site==mean.turns$site[i])]<-mean.turns$sd.turn[i]
-  
-}
 
 full.com$propObs<-full.com$Observed/full.com$Estimator
-
-# Take into account the number of years that have been sampled
-year.sum <- data.frame(richness %>% group_by(site) %>% summarise(years=(length(year)-1)))
-full.com<-left_join(full.com,year.sum,join_by("site"=="site"))
 
 # Take into account the number of traps that have been sampled
 
@@ -125,9 +106,18 @@ plot(Estimator~traps,full.com)
 
 # Pull Estimated and Observed Richness by sampling Values out of the results list -- full community only
 
-inext.list<-lapply(results,function(item) data.frame(item$out$iNextEst$size_based))
+inext.list<-lapply(results,function(item) data.frame(item$full$out$iNextEst$size_based))
 inext <- bind_rows(inext.list,.id="site")
-inext <- inext %>% filter(Order.q==0,Assemblage=="full")
+inext <- inext %>% filter(Order.q==0)
+
+thresh90<-data.frame(site=full.com$site,thresh=full.com$Estimator*0.90)
+trapAvg<-data.frame(completeness %>% group_by(site) %>% )
+
+
+ggplot(inext, aes(x = t, y = qD, color=site , group=site)) +
+  geom_line() +
+  labs(x = "Number of Traps", y = "Estimated Richness") +
+  theme_minimal()
 
 
 

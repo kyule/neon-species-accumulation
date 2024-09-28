@@ -16,6 +16,7 @@ source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
 # load necessary libraries
 library(dplyr)
 library(stringr)
+library(lubridate)
 
 # load NEON carabid taxonomy table
 taxa<-read.csv(paste0(datapath,"CarabidTaxonomicList_March2024.csv"))
