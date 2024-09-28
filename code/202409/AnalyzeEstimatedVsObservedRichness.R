@@ -64,11 +64,20 @@ for (i in 1: nrow(mean.turns)){
 
 full.com$propObs<-full.com$Observed/full.com$Estimator
 
-# Take into account the number of years that have been samples
+# Take into account the number of years that have been sampled
 year.sum <- data.frame(richness %>% group_by(site) %>% summarise(years=(length(year)-1)))
 full.com<-left_join(full.com,year.sum,join_by("site"=="site"))
 
+# Take into account the number of traps that have been sampled
+
+trap.sum <- data.frame(completeness %>% group_by(siteID) %>% summarise(traps=sum(traps)))
+full.com<-left_join(full.com,trap.sum,join_by("site"=="siteID"))
+
 # Start some basic analyses
+summary(lm(Observed~turnover,full.com))
+plot(Observed~turnover,full.com)
+# No relationship between observed and turnover
+
 summary(lm(Observed~turnover,full.com))
 plot(Observed~turnover,full.com)
 # No relationship between observed and turnover
@@ -78,8 +87,9 @@ plot(Estimator~turnover,full.com)
 # No relationship between estimated and turnover
 
 summary(glm(propObs~turnover,full.com,family=binomial(link="logit")))
+
 ggplot(full.com, aes(x = turnover, y = propObs, color=as.numeric(Estimator))) +
-  geom_point(size=3) + 
+  geom_point(aes(size=traps)) + 
   geom_smooth(method = "glm", method.args = list(family = "binomial"), color = "black") +  # Add linear regression line
   labs(x = "Mean Species Turnover", y = "Prop. Estimated Species Observed") +
   theme_minimal() +
@@ -108,7 +118,19 @@ summary(glm(propObs~years*Estimator,full.com,family=binomial(link="logit")))
 #Proportion observed decreases with the estimated number of species
 # but that negative effect is decreased with increasing numbers of years of sampling
 
-#Backwards model selection
+summary(lm(Estimator~traps,full.com))
+plot(Estimator~traps,full.com)
 
-full.model<-glm(propObs~years*Estimator,full.com,family=binomial(link="logit"))
-aic <- step_AIC(full.model)
+### Find sampling required to reach 90% diversity
+
+# Pull Estimated and Observed Richness by sampling Values out of the results list -- full community only
+
+inext.list<-lapply(results,function(item) data.frame(item$out$iNextEst$size_based))
+inext <- bind_rows(inext.list,.id="site")
+inext <- inext %>% filter(Order.q==0,Assemblage=="full")
+
+
+
+
+
+

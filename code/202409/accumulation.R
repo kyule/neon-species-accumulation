@@ -78,6 +78,16 @@ inc_data<-function(input.data){
   input<-c(ncol(presabs),as.vector(rowSums(presabs)))
   return.df$inc_freq<-input
   
+  #iNext results
+  out<-try({
+    iNEXT(input,q=c(0,1,2),datatype='incidence_freq',knot=30,endpoint=ncol(presabs)*3)},
+    silent=TRUE)
+  if (inherits(out, "try-error")) {
+    return.df$out <- paste("Error")
+  } else {
+    return.df$out<-out
+  }
+  
   return(return.df)
   
 }
@@ -127,9 +137,9 @@ for (i in 1:length(results)){
     inc_freq[[j+1]]<-results[[i]][[j+1]]$inc_freq
     
     # Conduct analysis on the communities, each year + the full data are treated as different 'assemblages'
-    print(paste0("****iNEXT analysis: ",sites[i]))
+    # All assemblages
     out<-try({
-      iNEXT(inc_freq,q=c(0,1,2),datatype='incidence_freq',knot=20,endpoint=ncol(presabs)*3)},
+      iNEXT(inc_freq,q=c(0,1,2),datatype='incidence_freq',knot=30,endpoint=6000)},
       silent=TRUE)
     if (inherits(out, "try-error")) {
       results[[i]]$out <- paste("Error")
