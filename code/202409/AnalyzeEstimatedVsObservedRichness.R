@@ -60,7 +60,8 @@ plot(Observed~turnover,full.com)
 
 summary(lm(Estimator~turnover,full.com))
 plot(Estimator~turnover,full.com)
-# Estimated increases with turnover #
+
+# Estimated increases with turnover
 
 summary(glm(propObs~turnover,full.com,family=binomial(link="logit")))
 
