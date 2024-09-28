@@ -1,4 +1,4 @@
-load("/Users/kelsey/Github/neon-species-accumulation/data/testIncludingProvisional/NeonData.Robj")
+load("/Users/kelsey/Github/neon-species-accumulation/data/NeonData.Robj")
 
 fullData<-NeonData$bet_expertTaxonomistIDProcessed
 fullData$year<-year(fullData$collectDate)
@@ -113,5 +113,115 @@ ggplot(full.com, aes(x = dissim, y = propObs, color=as.numeric(Estimator))) +
   theme_minimal() +
   scale_color_viridis_c(option = "D",name="Est. Richness")
 
+# Take into account the number of traps that have been sampled
+
+trap.sum <- data.frame(completeness %>% group_by(siteID) %>% summarise(traps=sum(traps)))
+full.com<-left_join(full.com,trap.sum,join_by("site"=="siteID"))
+
+# Start some basic analyses
+summary(lm(Observed~turnover,full.com))
+plot(Observed~turnover,full.com)
+# No relationship between observed and turnover
+
+summary(lm(Estimator~turnover,full.com))
+plot(Estimator~turnover,full.com)
+
+# Estimated increases with turnover
+
+summary(glm(propObs~turnover,full.com,family=binomial(link="logit")))
+
+ggplot(full.com, aes(x = turnover, y = propObs, color=as.numeric(Estimator))) +
+  geom_point(aes(size=years)) + 
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), color = "black") +  # Add linear regression line
+  labs(x = "Mean Species Turnover", y = "Prop. Estimated Species Observed") +
+  theme_minimal() +
+  scale_color_viridis_c(option = "D",name="Est. Richness")
+# negative relationship between turnover and proportion of estimated species richness we have observed
 
 
+summary(glm(propObs~Estimator,full.com,family=binomial(link="logit")))
+# negative relationship between estimated spp richness and proportion of estimated species richness we have observed
+ggplot(full.com, aes(x = Estimator, y = propObs, color=as.numeric(turnover))) +
+  geom_point(size=3) + 
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), color = "black") +  # Add linear regression line
+  labs(y = "Prop. Estimated Species Observed", x = "Estimated Richness") +
+  theme_minimal() +
+  scale_color_viridis_c(option = "D",name="turnover")
+# negative relationship between the proportion observed and the estimated richness overall
+
+summary(glm(propObs~years+turnover,full.com,family=binomial(link="logit")))
+#There is no relationship between the proportion observed and the number of years sampled overall
+
+summary(lm(Estimator~years,full.com))
+#estimated richness increases with years of sampling
+
+fullmodel<-glm(propObs~years*Estimator*turnover,full.com,family=binomial(link="logit"))
+stepaic<-stepAIC(fullmodel,direction="both")
+summary(stepaic)
+
+
+### Find sampling required to reach 90% diversity
+
+# Pull Estimated and Observed Richness by sampling Values out of the results list -- full community only
+
+inext.list<-lapply(results,function(item) data.frame(item$iNextEst$size_based))
+inext <- bind_rows(inext.list,.id="site")
+inext <- inext %>% filter(Order.q==0)
+
+thresh90<-data.frame(site=full.com$site,thresh=full.com$Estimator*0.90)
+
+
+# Find intersections
+find_intersections <- function(df,thresh,metric) {
+  site_data <- df[df$site == thresh$site, ]
+  
+  # Loop through data and check for crossings
+  for (i in 1:(nrow(site_data) - 1)) {
+    if ((site_data$qD[i] < thresh$thresh && site_data$qD[i+1] > thresh$thresh) ||
+        (site_data$qD[i] > thresh$thresh && site_data$qD[i+1] < thresh$thresh)) {
+      
+      # Linear interpolation to find the exact crossing point
+      if (metric=="t"){
+        t1 <- site_data$t[i]
+        t2 <- site_data$t[i+1]
+        qD1 <- site_data$qD[i]
+        qD2 <- site_data$qD[i+1]
+        crossing_t <- t1 + (thresh$thresh - qD1) * (t2 - t1) / (qD2 - qD1)
+        
+        return(data.frame(site = thresh$site, t = crossing_t, qD = thresh$thresh))
+      }
+      
+      if (metric=="byYears")
+        y1 <- site_data$byYears[i]
+      y2 <- site_data$byYears[i+1]
+      qD1 <- site_data$qD[i]
+      qD2 <- site_data$qD[i+1]
+      crossing_t <- y1 + (thresh$thresh - qD1) * (y2 - y1) / (qD2 - qD1)
+      
+      return(data.frame(site = thresh$site, t = crossing_t, qD = thresh$thresh))
+    }
+  }
+  return(NULL)
+}
+
+# Get all intersections 
+intersections <- do.call(rbind, lapply(1:nrow(thresh90), function(i) {
+  find_intersections(inext, thresh90[i, ],"t")
+}))
+
+full.com<-left_join(full.com,intersections,join_by("site"=="site"))
+
+ggplot(inext, aes(x = t, y = qD, color=site , group=site)) +
+  geom_line() +
+  labs(x = "Number of Years", y = "Estimated Richness") +
+  theme_minimal() +
+  scale_color_brewer(palette = "Set1") +
+  geom_hline(data = thresh90, aes(yintercept = thresh, color = site), linetype = "dashed") +
+  geom_point(data = intersections, aes(x = t, y = qD), color = "darkgrey", size = 2) 
+
+fullmodel<-lm(t~Estimator*turnover,full.com)
+stepaic<-stepAIC(fullmodel,direction="both")
+summary(stepaic)
+
+# It takes longer the more species are estimated to be there, #
+# but that fact is  dissimilar communities with more 

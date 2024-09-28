@@ -29,7 +29,7 @@ if(NewResults==TRUE|file.exists(paste0(datapath,"results.Robj"))==FALSE){
 
 
 # Remove GUAN due to very low sample size
-results<- results[!names(results)=="GUAN"]
+#results<- results[!names(results)=="GUAN"]
 
 # Pull Estimated Asymptotic and Observed Richness Values out of the results list -- full data only
 
@@ -50,8 +50,10 @@ full.com$propObs<-full.com$Observed/full.com$Estimator
 
 # Take into account the number of traps that have been sampled
 
-trap.sum <- data.frame(completeness %>% group_by(siteID) %>% summarise(traps=sum(traps)))
-full.com<-left_join(full.com,trap.sum,join_by("site"=="siteID"))
+trap.list<-lapply(results,function(item) nrow(data.frame(item$full$traps)))
+trap.list <- melt(trap.list)
+names(trap.list)<-c("traps","site")
+full.com<-left_join(full.com,trap.list,join_by("site"=="site"))
 
 # Start some basic analyses
 summary(lm(Observed~turnover,full.com))
@@ -61,7 +63,6 @@ plot(Observed~turnover,full.com)
 summary(lm(Estimator~turnover,full.com))
 plot(Estimator~turnover,full.com)
 
-# Estimated increases with turnover
 
 summary(glm(propObs~turnover,full.com,family=binomial(link="logit")))
 
@@ -96,6 +97,7 @@ summary(stepaic)
 
 summary(lm(Estimator~traps,full.com))
 plot(Estimator~traps,full.com)
+# The more traps you have total the more species you estimate
 
 
 ### Find sampling required to reach 90% diversity
@@ -107,8 +109,8 @@ inext <- bind_rows(inext.list,.id="site")
 inext <- inext %>% filter(Order.q==0)
 
 thresh90<-data.frame(site=full.com$site,thresh=full.com$Estimator*0.90)
-trapAvg<-data.frame(completeness %>% group_by(siteID) %>% summarise(trapno=mean(traps)))
-thresh90<-left_join(thresh90,trapAvg,join_by("site"=="siteID"))
+full.com$trapAvg<-full.com$traps/full.com$years
+thresh90<-left_join(thresh90,full.com[,c("site","trapAvg")],join_by("site"=="site"))
 
 # Find intersections
 find_intersections <- function(df,thresh,metric) {
