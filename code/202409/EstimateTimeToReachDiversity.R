@@ -97,20 +97,23 @@ full.com<-left_join(full.com,thresh90,join_by("site"=="site"))
 # Bring in field site data
 
 sites<-read.csv("/Users/kelsey/Github/neon-species-accumulation/data/NEON_Field_Site_Metadata_20240926.csv")
+inext<-left_join(inext,sites,join_by("site"=="field_site_id"))
+thresh90<-left_join(thresh90,sites,join_by("site"=="field_site_id"))
 
-
-
-
-
+# Find x and ylims
+xlim<-ceiling(max(thresh90$y.thresh))
+ylim<-ceiling(max(asyest$Estimator))
 
 #Plot the accumulation curves and estimated number of years
 ggplot(inext, aes(x = y, y = qD, color=site , group=site)) +
-  geom_line() +
+  geom_line(size=1) +
+  facet_wrap(~ field_domain_id) +
   labs(x = "Years", y = "Estimated Richness") +
   theme_minimal() +
-  scale_color_brewer(palette = "Set1") +
   geom_hline(data = thresh90, aes(yintercept = thresh, color = site), linetype = "dashed") +
-  geom_point(data = thresh90, aes(x = y.thresh, y = thresh), color = "darkgrey", size = 2) 
+  geom_point(data = thresh90, aes(x = y.thresh, y = thresh), color = "darkgrey", size = 2) +
+  ylim(0,ylim) +
+  xlim(0,xlim)
 
 
 
