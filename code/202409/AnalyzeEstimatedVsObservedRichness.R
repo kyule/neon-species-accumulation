@@ -98,9 +98,9 @@ model_reduced3 <- glm(propObs ~ years + turnover + Estimator +  years:Estimator 
 anova(model_reduced3, model_reduced2, test = "Chisq")
 summary(model_reduced3)
 
-model_reduced4 <- glm(propObs ~ years + turnover + Estimator  , family = quasibinomial, data = full.com)
+model_reduced4 <- glm(propObs ~ years + turnover + Estimator , family = quasibinomial, data = full.com)
 anova(model_reduced4, model_reduced3, test = "Chisq")
-summary(model_reduced4)
+summary(model_reduced3)
 ### The best model says that the proportion of estimated species that have been observed increases with number of years 
     #of sampling, decreases with average year-to-year species turnover, and 
     #decreases with the number of species that have been estimated
@@ -137,6 +137,21 @@ ggplot(full.com,
   theme_bw() + 
   scale_color_viridis_c(option = "D", name = "years") +
   scale_alpha(range = c(0, 0.5), guide = "none")  
+
+# Overlap with estimator +/- se
+ggplot(full.com,aes(x=as.factor(signif),y=turnover))+
+  geom_violin()
+
+
+# Plot on "maps"
+sites<-read.csv("/Users/kelsey/Github/neon-species-accumulation/data/NEON_Field_Site_Metadata_20240926.csv")
+full.com<-left_join(full.com,sites,join_by("site"=="field_site_id"))
+
+ggplot(full.com,aes(x=field_longitude,y=field_latitude)) +
+  geom_point(aes(size=Estimator,color=as.numeric(propObs))) +
+  theme_bw() + 
+  scale_color_viridis_c(option = "D", name = "Obs/Exp")
+  
 
 
 

@@ -80,8 +80,7 @@ ggplot(full.com, aes(x = turnover, y = propObs, color=as.numeric(Estimator))) +
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +  
   labs(x = "Mean Species Turnover", y = "Q=1: obs/est") +
   theme_minimal() +
-  scale_color_viridis_c(option = "D",name="Est. Diversity")+
-  ylim(0.25,1)
+  scale_color_viridis_c(option = "D",name="Est. Diversity")
 # negative relationship between turnover and proportion of estimated species Diversity we have observed
 
 

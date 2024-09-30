@@ -94,58 +94,37 @@ for (i in 1:nrow(thresh90)){
 thresh90$y.thresh<-thresh90$t.thresh/thresh90$trapAvg
 full.com<-left_join(full.com,thresh90,join_by("site"=="site"))
 
-# Bring in field site data
+# Bring in field site data, join other data for easy plotting
 
 sites<-read.csv("/Users/kelsey/Github/neon-species-accumulation/data/NEON_Field_Site_Metadata_20240926.csv")
+domains<-data.frame(ID=c('D01',	'D02',	'D03',	'D04',	'D05',	'D06',	'D07',	'D08',	'D09',	'D10',	'D11',	'D12',	'D13',	'D14',	'D15',	'D16',	'D17',	'D18',	'D19',	'D20'),
+                         domainName=c('Northeast',	'Mid-Atlantic',	'Southeast',	'Atlantic Neotropical',	'Great Lakes',	'Prairie Peninsula',	'Central Plains',	'Ozarks Complex',	'Northern Plains',	'Southern Plains',	'Southern Rockies/Colorado Plateau',	'Desert Southwest',	'Pacific Southwest',	'Northern Rockies',	'Great Basin',	'Pacific Northwest',	'California',	'Tundra',	'Taiga',	'Pacific Tropical'))
+sites<-left_join(sites,domains,join_by("field_domain_id"=="ID"))
 inext<-left_join(inext,sites,join_by("site"=="field_site_id"))
 thresh90<-left_join(thresh90,sites,join_by("site"=="field_site_id"))
+inext<-left_join(inext,full.com,join_by("site"=="site"))
 
 # Find x and ylims
 xlim<-ceiling(max(thresh90$y.thresh))
 ylim<-ceiling(max(asyest$Estimator))
 
 #Plot the accumulation curves and estimated number of years
-ggplot(inext, aes(x = y, y = qD, color=site , group=site)) +
+ggplot(inext, aes(x = y, y = qD,group=site,color=as.numeric(turnover))) +
   geom_line(size=1) +
-  facet_wrap(~ field_domain_id) +
+  facet_wrap(~ domainName) +
   labs(x = "Years", y = "Estimated Richness") +
   theme_minimal() +
-  geom_hline(data = thresh90, aes(yintercept = thresh, color = site), linetype = "dashed") +
+  geom_hline(data = thresh90, aes(yintercept = thresh), linetype = "dashed") +
   geom_point(data = thresh90, aes(x = y.thresh, y = thresh), color = "darkgrey", size = 2) +
+  geom_point(data = inext[which(inext$Method=="Observed"),],aes(x= y, y=qD),color="black", size = 2) +
   ylim(0,ylim) +
-  xlim(0,xlim)
+  xlim(0,xlim) +
+  scale_color_viridis_c(option = "D",name="Avg. turnover")
+
+hist(thresh90$y.thresh)
+summary(thresh90$y.thresh)
 
 
-
-
-
-# Scale the X axis by years of sampling
-
-inext$byYears<-NA
-for (i in 1:nrow(thresh90)){
-  inext$byYears[which(inext$site==thresh90$site[i])]<-inext$t[which(inext$site==thresh90$site[i])]/thresh90$trapno[i]
-}
-
-intersections <- do.call(rbind, lapply(1:nrow(thresh90), function(i) {
-  find_intersections(inext, thresh90[i, ],"byYears")
-}))
-
-
-ggplot(inext, aes(x = byYears, y = qD, color=site , group=site)) +
-  geom_line() +
-  labs(x = "Number of Years", y = "Estimated Richness") +
-  theme_minimal() +
-  scale_color_brewer(palette = "Set1") +
-  geom_hline(data = thresh90, aes(yintercept = thresh, color = site), linetype = "dashed") +
-  geom_point(data = intersections, aes(x = t, y = qD), color = "black", size = 2) 
-
-
-
-# Turnover relates to number of years?
-
-thresh90<-left_join(thresh90,turnover,join_by("site"=="site"))
-
-summary(lm(yearsReq~turnover,thresh90))
 
 
 
