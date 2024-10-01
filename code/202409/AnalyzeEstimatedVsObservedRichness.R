@@ -152,6 +152,29 @@ ggplot(full.com,aes(x=field_longitude,y=field_latitude)) +
   theme_bw() + 
   scale_color_viridis_c(option = "D", name = "Obs/Exp")
   
+# Adjusted pseudo-R2 model comparison
+
+model <- glm(propObs ~ turnover + Estimator + years + Estimator:years, family = quasibinomial, data = full.com)
+null_model <- glm(propObs ~ 1, family = quasibinomial, data = full.com)
+
+dev_r2_mod <- 1 - (deviance(model) / deviance(null_model))
+model2 <- glm(propObs ~ Estimator + years + Estimator:years , family = quasibinomial, data = full.com)
+dev_r2_mod2 <- 1 - (deviance(model2) / deviance(null_model))
+
+dev_r2_mod-dev_r2_mod2
+
+n <- nrow(full.com)
+
+# Number of predictors (excluding the intercept)
+p1 <- length(coef(model)) - 1
+p2 <- length(coef(model2)) - 1
+
+
+# Adjusted pseudo-R-squared
+adj_dev_r2_mod <- 1 - ((1 - dev_r2_mod) * (n - 1) / (n - p2 - 1))
+adj_dev_r2_mod2 <- 1 - ((1 - dev_r2_mod2) * (n - 1) / (n - p2 - 1))
+adj_dev_r2_mod - adj_dev_r2_mod2
+
 
 
 
