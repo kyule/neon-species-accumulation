@@ -20,6 +20,7 @@ set.seed(85705)
 library("dplyr")
 library("ggplot2")
 library("MASS")
+library("reshape")
 
 # Load in the formatted clean data, or download and create it. 
 #Make sure the results are correctly configured
