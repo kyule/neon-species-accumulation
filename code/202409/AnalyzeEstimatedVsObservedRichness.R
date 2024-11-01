@@ -102,8 +102,10 @@ summary(model_reduced3)
 
 model_reduced4 <- glm(propObs ~ turnover + years + Estimator , family = quasibinomial, data = full.com)
 anova(model_reduced4, model_reduced3, test = "Chisq")
+summary(model_reduced4)
+
+#stick with model 3
 summary(model_reduced3)
-#summary(model_reduced4)
 
 ### The best model says that the proportion of estimated species that have been observed increases with number of years 
     #of sampling, decreases with average year-to-year species turnover, and 
