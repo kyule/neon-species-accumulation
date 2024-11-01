@@ -20,6 +20,7 @@ set.seed(85705)
 library("dplyr")
 library("ggplot2")
 library("MASS")
+library("reshape")
 
 # Load in the formatted clean data, or download and create it. 
 #Make sure the results are correctly configured
@@ -43,7 +44,7 @@ turnover.list<-lapply(results,function(item) data.frame(item$turnover))
 turnover.list <- bind_rows(turnover.list,.id="site")
 turnover<-data.frame(turnover.list %>% 
                        group_by(site) %>% 
-                       summarise(turnover=mean(total,na.rm=TRUE),years=length(year)))
+                       summarise(turnover=mean(total,na.rm=TRUE),years=length(year)+1))
 full.com <- left_join(richness,turnover,join_by("site"=="site"))
 
 full.com$propObs<-full.com$Observed/full.com$Estimator
@@ -78,29 +79,32 @@ plot(Estimator~dissim,full.com)
 ggplot(full.com, aes(x = turnover, y = propObs, color=as.numeric(Estimator))) +
   geom_point(aes(size=years)) + 
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +  
-  labs(x = "Mean Species Turnover", y = "Prop. Estimated Species Observed") +
+  labs(x = "Mean Species Turnover", y = "Observed/Estimated value for q=0") +
   theme_minimal() +
-  scale_color_viridis_c(option = "D",name="Est. Richness")
+  scale_color_viridis_c(option = "D",name="Est. q=0")
 # negative relationship between turnover and proportion of estimated species richness we have observed
 
 
 # Likelihood ratio test to determine best models of proportion observed
-model_full <- glm(propObs ~ years * turnover * Estimator, family = quasibinomial, data = full.com)
-model_reduced <- glm(propObs ~ years + turnover + Estimator + years:turnover + years:Estimator + turnover:Estimator, family = quasibinomial, data = full.com)
+model_full <- glm(propObs ~ turnover *years *  Estimator, family = quasibinomial, data = full.com)
+summary(model_full)
+model_reduced <- glm(propObs ~ turnover + years + Estimator + turnover:years + turnover:Estimator + years:Estimator, family = quasibinomial, data = full.com)
 anova(model_reduced, model_full, test = "Chisq")
 summary(model_reduced)
 
-model_reduced2 <- glm(propObs ~ years + turnover + Estimator +  years:Estimator + turnover:Estimator, family = quasibinomial, data = full.com)
+model_reduced2 <- glm(propObs ~ turnover + years + Estimator + turnover:Estimator + years:Estimator, family = quasibinomial, data = full.com)
 anova(model_reduced2, model_reduced, test = "Chisq")
 summary(model_reduced2)
 
-model_reduced3 <- glm(propObs ~ years + turnover + Estimator +  years:Estimator , family = quasibinomial, data = full.com)
+model_reduced3 <- glm(propObs ~ turnover + years + Estimator +  years:Estimator, family = quasibinomial, data = full.com)
 anova(model_reduced3, model_reduced2, test = "Chisq")
 summary(model_reduced3)
 
-model_reduced4 <- glm(propObs ~ years + turnover + Estimator , family = quasibinomial, data = full.com)
+model_reduced4 <- glm(propObs ~ turnover + years + Estimator , family = quasibinomial, data = full.com)
 anova(model_reduced4, model_reduced3, test = "Chisq")
 summary(model_reduced3)
+#summary(model_reduced4)
+
 ### The best model says that the proportion of estimated species that have been observed increases with number of years 
     #of sampling, decreases with average year-to-year species turnover, and 
     #decreases with the number of species that have been estimated
@@ -174,8 +178,4 @@ p2 <- length(coef(model2)) - 1
 adj_dev_r2_mod <- 1 - ((1 - dev_r2_mod) * (n - 1) / (n - p2 - 1))
 adj_dev_r2_mod2 <- 1 - ((1 - dev_r2_mod2) * (n - 1) / (n - p2 - 1))
 adj_dev_r2_mod - adj_dev_r2_mod2
-
-
-
-
 
