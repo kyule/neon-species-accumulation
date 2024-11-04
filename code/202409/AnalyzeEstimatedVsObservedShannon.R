@@ -43,7 +43,7 @@ turnover.list<-lapply(results,function(item) data.frame(item$turnover))
 turnover.list <- bind_rows(turnover.list,.id="site")
 turnover<-data.frame(turnover.list %>% 
                        group_by(site) %>% 
-                       summarise(turnover=mean(total,na.rm=TRUE),years=length(year)))
+                       summarise(turnover=mean(total,na.rm=TRUE),years=length(year)+1))
 full.com <- left_join(Diversity,turnover,join_by("site"=="site"))
 
 full.com$propObs<-full.com$Observed/full.com$Estimator
@@ -78,7 +78,7 @@ plot(Estimator~dissim,full.com)
 ggplot(full.com, aes(x = turnover, y = propObs, color=as.numeric(Estimator))) +
   geom_point(aes(size=years)) + 
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +  
-  labs(x = "Mean Species Turnover", y = "Observed/Esimated value for q=0") +
+  labs(x = "Mean Species Turnover", y = "Observed/Esimated value for q=1") +
   theme_minimal() +
   scale_color_viridis_c(option = "D",name="Est. q")
 # negative relationship between turnover and proportion of estimated species Diversity we have observed

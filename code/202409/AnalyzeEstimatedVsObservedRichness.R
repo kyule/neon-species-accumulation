@@ -31,6 +31,10 @@ if(NewResults==TRUE|file.exists(paste0(datapath,"results.Robj"))==FALSE){
 # Remove GUAN due to very low number of beetles captured. 
 ### Only 36 beetles in 7 years of sampling, almost complete turnover in communities between most years
 results<- results[!names(results)=="GUAN"]
+#results<- results[!names(results)=="YELL"] take out in provisional
+#results<- results[!names(results)=="TEAK"] take out in provisional
+
+
 
 ### Pull Estimated Asymptotic and Observed Richness Values out of the results list -- full data only
 
@@ -96,6 +100,17 @@ model_reduced2 <- glm(propObs ~ turnover + years + Estimator + turnover:Estimato
 anova(model_reduced2, model_reduced, test = "Chisq")
 summary(model_reduced2)
 
+#with provisional and removing <5 years
+model_reduced2 <- glm(propObs ~ turnover + years + Estimator + turnover:years + turnover:Estimator, family = quasibinomial, data = full.com)
+model_reduced3 <- glm(propObs ~ turnover + years + Estimator + turnover:years, family = quasibinomial, data = full.com)
+model_reduced4 <- glm(propObs ~ turnover + years + Estimator, family = quasibinomial, data = full.com)
+model_reduced5 <- glm(propObs ~ turnover + Estimator, family = quasibinomial, data = full.com)
+anova(model_reduced5, model_reduced4, test = "Chisq")
+summary(model_reduced5)
+model_reduced6 <- glm(propObs ~ Estimator, family = quasibinomial, data = full.com)
+anova(model_reduced6, model_reduced5, test = "Chisq")
+#Model 5 so decrease with estimator and turnover is the best
+
 model_reduced3 <- glm(propObs ~ turnover + years + Estimator +  years:Estimator, family = quasibinomial, data = full.com)
 anova(model_reduced3, model_reduced2, test = "Chisq")
 summary(model_reduced3)
@@ -107,7 +122,7 @@ summary(model_reduced4)
 #stick with model 3
 summary(model_reduced3)
 
-### The best model says that the proportion of estimated species that have been observed increases with number of years 
+#### The best model says that the proportion of estimated species that have been observed increases with number of years 
     #of sampling, decreases with average year-to-year species turnover, and 
     #decreases with the number of species that have been estimated
 
@@ -181,3 +196,20 @@ adj_dev_r2_mod <- 1 - ((1 - dev_r2_mod) * (n - 1) / (n - p2 - 1))
 adj_dev_r2_mod2 <- 1 - ((1 - dev_r2_mod2) * (n - 1) / (n - p2 - 1))
 adj_dev_r2_mod - adj_dev_r2_mod2
 
+signifmod<-glm(signif~years*turnover*Estimator,full.com,family="binomial")
+summary(signifmod)
+signifmod2<-glm(signif~turnover+years+Estimator+turnover:years+turnover:Estimator+years:Estimator,full.com,family="binomial")
+summary(signifmod2)
+anova(signifmod2,signifmod,test="Chisq")
+signifmod3<-glm(signif~turnover+years+Estimator+turnover:Estimator+years:Estimator,full.com,family="binomial")
+summary(signifmod3)
+anova(signifmod3,signifmod2,test="Chisq")
+signifmod4<-glm(signif~turnover+years+Estimator+turnover:Estimator,full.com,family="binomial")
+summary(signifmod4)
+anova(signifmod4,signifmod3,test="Chisq")
+signifmod5<-glm(signif~turnover+Estimator+turnover:Estimator,full.com,family="binomial")
+summary(signifmod5)
+anova(signifmod5,signifmod4,test="Chisq")
+signifmod6<-glm(signif~turnover+Estimator,full.com,family="binomial")
+summary(signifmod6)
+anova(signifmod6,signifmod5,test="Chisq")
