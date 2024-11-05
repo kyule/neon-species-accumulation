@@ -26,8 +26,7 @@ library("MASS")
 # Load in the formatted clean data, or download and create it. 
 #Make sure the results are correctly configured
 
-if(NewResults==TRUE|file.exists(paste0(datapath,"results.Robj"))==FALSE){
-  source(paste0(codepath,"accumulation.R"))}else{load(file=paste0(datapath,"resultsFull.Robj"))}
+#if(NewResults==TRUE|file.exists(paste0(datapath,"results.Robj"))==FALSE){source(paste0(codepath,"accumulation.R"))}else{load(file=paste0(datapath,"resultsFull.Robj"))}
 
 # Remove GUAN due to very low number of beetles captured. 
 ### Only 36 beetles in 7 years of sampling, almost complete turnover in communities between most years
@@ -123,6 +122,20 @@ ggplot(inext, aes(x = y, y = qD,group=site,color=as.numeric(turnover))) +
 
 hist(thresh90$y.thresh)
 summary(thresh90$y.thresh)
+
+library(ggplot2)
+
+# Sample data
+data <- data.frame(value = rnorm(1000, mean = 50, sd = 10))
+
+# Basic histogram
+ggplot(thresh90, aes(x = y.thresh)) +
+  geom_histogram(binwidth = 5,color='black') +
+  scale_fill_viridis_c(option = "B") +
+  labs(x = "Years of sampling to reach threshold", y = "Count") +
+  theme_minimal()
+
+
 
 
 

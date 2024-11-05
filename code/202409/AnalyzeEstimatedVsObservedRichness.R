@@ -25,16 +25,13 @@ library("reshape")
 # Load in the formatted clean data, or download and create it. 
 #Make sure the results are correctly configured
 
-if(NewResults==TRUE|file.exists(paste0(datapath,"results.Robj"))==FALSE){
-  source(paste0(codepath,"accumulation.R"))}else{load(file=paste0(datapath,"resultsFull.Robj"))}
+#if(NewResults==TRUE|file.exists(paste0(datapath,"results.Robj"))==FALSE){source(paste0(codepath,"accumulation.R"))}else{load(file=paste0(datapath,"resultsFull.Robj"))}
 
 # Remove GUAN due to very low number of beetles captured. 
 ### Only 36 beetles in 7 years of sampling, almost complete turnover in communities between most years
 results<- results[!names(results)=="GUAN"]
 #results<- results[!names(results)=="YELL"] take out in provisional
 #results<- results[!names(results)=="TEAK"] take out in provisional
-
-
 
 ### Pull Estimated Asymptotic and Observed Richness Values out of the results list -- full data only
 
@@ -59,33 +56,13 @@ trap.list <- melt(trap.list)
 names(trap.list)<-c("traps","site")
 full.com<-left_join(full.com,trap.list,join_by("site"=="site"))
 
-# Pull in dissimilarity measures
-dissim<-melt(lapply(results,function(item) mean(item$dissim)))
-names(dissim)<-c("dissim","site")
-full.com<-left_join(full.com,dissim,join_by("site"=="site"))
-
-
-#### Start some basic analyses
-summary(lm(Observed~turnover*years,full.com))
-plot(Observed~turnover,full.com)
-summary(lm(Observed~dissim*years,full.com))
-plot(Observed~dissim,full.com)
-# No relationship between observed and turnover or number of years / dissim number of years
-
-summary(lm(Estimator~turnover*years,full.com))
-plot(Estimator~turnover,full.com)
-summary(lm(Estimator~dissim*years,full.com))
-plot(Estimator~dissim,full.com)
-# same for estimated
-
-
 ### Proportion observed analyses
 ggplot(full.com, aes(x = turnover, y = propObs, color=as.numeric(Estimator))) +
   geom_point(aes(size=years)) + 
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +  
-  labs(x = "Mean Species Turnover", y = "Observed/Estimated value for q=0") +
+  labs(x = "Mean Species Turnover", y = "Observed/Estimated Richness") +
   theme_minimal() +
-  scale_color_viridis_c(option = "D",name="Est. q=0")
+  scale_color_viridis_c(option = "D",name="Est. richness")
 # negative relationship between turnover and proportion of estimated species richness we have observed
 
 
@@ -135,81 +112,39 @@ full.com$signif<- ifelse(full.com$Observed > (full.com$Estimator + full.com$Est_
                          1, 0)
 
 # Create rank order values
-full.com<-full.com[order(full.com$Observed),]
+full.com<-full.com[order(full.com$Observed,decreasing=TRUE),]
 full.com$obsRank<-1:nrow(full.com)
-full.com<-full.com[order(full.com$turnover),]
+full.com<-full.com[order(full.com$turnover,decreasing=TRUE),]
 full.com$turnRank<-1:nrow(full.com)
-full.com<-full.com[order(full.com$dissim),]
-full.com$dissimRank<-1:nrow(full.com)
+
 
 ggplot(full.com, 
-       aes(x = turnRank, y = Observed)) +
-  geom_rect(aes(xmin = turnRank - 0.5, 
-                xmax = turnRank + 0.5, 
+       aes(x = obsRank, y = Observed)) +
+  geom_rect(aes(xmin = obsRank - 0.5, 
+                xmax = obsRank + 0.5, 
                 ymin = -Inf, 
                 ymax = Inf, alpha = signif),
             fill = "grey") +
   geom_errorbar(aes(ymin = Estimator - Est_s.e., 
                     ymax = Estimator + Est_s.e., 
-                    color = years), width = 0,size=2) + 
+                    color = turnover), width = 0,size=2) + 
   geom_point(color = "black", size = 2) + 
   #geom_point(aes(x = 1:nrow(full.com), y = Estimator, color = propObs), size = 2) + 
-  labs(x = "Rank-order Turnover", y = "Richness") +
+  labs(x = "Rank-order Observed Value", y = "Richness") +
   theme_bw() + 
-  scale_color_viridis_c(option = "D", name = "years") +
+  scale_color_viridis_c(option = "D", name = "turnover") +
   scale_alpha(range = c(0, 0.5), guide = "none")  
 
 # Overlap with estimator +/- se
-ggplot(full.com,aes(x=as.factor(signif),y=turnover))+
-  geom_violin()
+full.com$signifText<-"Overlap"
+full.com$signifText[which(full.com$signif==1)]<-"No Overlap"
+ggplot(full.com,aes(x=turnover, y=as.factor(signifText)))+
+  labs(y = "", x = "Mean Species Turnover") +
+  geom_violin() + stat_summary(
+    fun = "mean", geom = "point", shape = 20, size = 3, color = "black")+
+  theme_minimal()
 
+signif_model<-glm(signif~turnover,full.com,family="binomial")
+summary(signif_model)
 
-# Plot on "maps"
-sites<-read.csv("/Users/kelsey/Github/neon-species-accumulation/data/NEON_Field_Site_Metadata_20240926.csv")
-full.com<-left_join(full.com,sites,join_by("site"=="field_site_id"))
-
-ggplot(full.com,aes(x=field_longitude,y=field_latitude)) +
-  geom_point(aes(size=Estimator,color=as.numeric(propObs))) +
-  theme_bw() + 
-  scale_color_viridis_c(option = "D", name = "Obs/Exp")
   
-# Adjusted pseudo-R2 model comparison
-
-model <- glm(propObs ~ turnover + Estimator + years + Estimator:years, family = quasibinomial, data = full.com)
-null_model <- glm(propObs ~ 1, family = quasibinomial, data = full.com)
-
-dev_r2_mod <- 1 - (deviance(model) / deviance(null_model))
-model2 <- glm(propObs ~ Estimator + years + Estimator:years , family = quasibinomial, data = full.com)
-dev_r2_mod2 <- 1 - (deviance(model2) / deviance(null_model))
-
-dev_r2_mod-dev_r2_mod2
-
-n <- nrow(full.com)
-
-# Number of predictors (excluding the intercept)
-p1 <- length(coef(model)) - 1
-p2 <- length(coef(model2)) - 1
-
-
-# Adjusted pseudo-R-squared
-adj_dev_r2_mod <- 1 - ((1 - dev_r2_mod) * (n - 1) / (n - p2 - 1))
-adj_dev_r2_mod2 <- 1 - ((1 - dev_r2_mod2) * (n - 1) / (n - p2 - 1))
-adj_dev_r2_mod - adj_dev_r2_mod2
-
-signifmod<-glm(signif~years*turnover*Estimator,full.com,family="binomial")
-summary(signifmod)
-signifmod2<-glm(signif~turnover+years+Estimator+turnover:years+turnover:Estimator+years:Estimator,full.com,family="binomial")
-summary(signifmod2)
-anova(signifmod2,signifmod,test="Chisq")
-signifmod3<-glm(signif~turnover+years+Estimator+turnover:Estimator+years:Estimator,full.com,family="binomial")
-summary(signifmod3)
-anova(signifmod3,signifmod2,test="Chisq")
-signifmod4<-glm(signif~turnover+years+Estimator+turnover:Estimator,full.com,family="binomial")
-summary(signifmod4)
-anova(signifmod4,signifmod3,test="Chisq")
-signifmod5<-glm(signif~turnover+Estimator+turnover:Estimator,full.com,family="binomial")
-summary(signifmod5)
-anova(signifmod5,signifmod4,test="Chisq")
-signifmod6<-glm(signif~turnover+Estimator,full.com,family="binomial")
-summary(signifmod6)
-anova(signifmod6,signifmod5,test="Chisq")
