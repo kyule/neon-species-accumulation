@@ -57,12 +57,19 @@ names(trap.list)<-c("traps","site")
 full.com<-left_join(full.com,trap.list,join_by("site"=="site"))
 
 ### Proportion observed analyses
-ggplot(full.com, aes(x = turnover, y = propObs, color=as.numeric(Estimator))) +
-  geom_point(aes(size=years)) + 
+ggplot(full.com, aes(x = turnover, y = propObs, color = as.numeric(Estimator))) +
+  geom_point(aes(size = years)) + 
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +  
+  annotate("text", x = -Inf, y = Inf, label = "a", fontface = "bold", hjust = -25, vjust = 1.1, size = 6) +
   labs(x = "Mean Species Turnover", y = "Observed/Estimated Richness") +
   theme_minimal() +
-  scale_color_viridis_c(option = "D",name="Est. richness")
+  scale_color_viridis_c(option = "D", name = "Est. richness") +
+  theme(
+    axis.title = element_text(size = 18),  # Adjusts font size for axis titles
+    axis.text = element_text(size = 18),   # Adjusts font size for axis labels
+    legend.title = element_text(size = 18), # Adjusts font size for legend title
+    legend.text = element_text(size = 18)   # Adjusts font size for legend text
+  )
 # negative relationship between turnover and proportion of estimated species richness we have observed
 
 
@@ -131,18 +138,29 @@ ggplot(full.com,
   geom_point(color = "black", size = 2) + 
   #geom_point(aes(x = 1:nrow(full.com), y = Estimator, color = propObs), size = 2) + 
   labs(x = "Rank-order Observed Value", y = "Richness") +
+  annotate("text", x = -Inf, y = Inf, label = "a", fontface = "bold", hjust = -30, vjust = 1.1, size = 6) +
   theme_bw() + 
   scale_color_viridis_c(option = "D", name = "turnover") +
-  scale_alpha(range = c(0, 0.5), guide = "none")  
+  scale_alpha(range = c(0, 0.5), guide = "none")  +
+  theme(
+    axis.title = element_text(size = 18),  # Adjusts font size for axis titles
+    axis.text = element_text(size = 18),   # Adjusts font size for axis labels
+    legend.title = element_text(size = 18), # Adjusts font size for legend title
+    legend.text = element_text(size = 18)   # Adjusts font size for legend text
+  )
 
 # Overlap with estimator +/- se
 full.com$signifText<-"Overlap"
 full.com$signifText[which(full.com$signif==1)]<-"No Overlap"
 ggplot(full.com,aes(x=turnover, y=as.factor(signifText)))+
-  labs(y = "", x = "Mean Species Turnover") +
+  labs(y = "Richness", x = "Mean Species Turnover") +
   geom_violin() + stat_summary(
     fun = "mean", geom = "point", shape = 20, size = 3, color = "black")+
-  theme_minimal()
+  theme_minimal()   + theme(
+    axis.title = element_text(size = 18),  # Adjusts font size for axis titles
+    axis.text = element_text(size = 16),   # Adjusts font size for axis labels
+  )
+  
 
 signif_model<-glm(signif~turnover,full.com,family="binomial")
 summary(signif_model)

@@ -25,7 +25,8 @@ library("reshape")
 # Load in the formatted clean data, or download and create it. 
 #Make sure the results are correctly configured
 
-#if(NewResults==TRUE|file.exists(paste0(datapath,"results.Robj"))==FALSE){source(paste0(codepath,"accumulation.R"))}else{load(file=paste0(datapath,"resultsFull.Robj"))}
+#if(NewResults==TRUE|file.exists(paste0(datapath,"results.Robj"))==FALSE){source(paste0(codepath,"accumulation.R"))}else{load(file=paste0(datapath,"FullAndCleanData.Robj"))}
+load("/Users/kelsey/Github/neon-species-accumulation/new/resultsFull.Robj")
 
 # Remove GUAN due to very low number of beetles captured. 
 ### Only 36 beetles in 7 years of sampling, almost complete turnover in communities between most years
@@ -60,9 +61,17 @@ full.com<-left_join(full.com,trap.list,join_by("site"=="site"))
 ggplot(full.com, aes(x = turnover, y = propObs, color=as.numeric(Estimator))) +
   geom_point(aes(size=years)) + 
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +  
+  annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -25, vjust = 1.1, size = 6) +
   labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
   theme_minimal() +
-  scale_color_viridis_c(option = "D",name="Est. Diversity")
+  scale_color_viridis_c(option = "D",name="Est. Diversity")  +
+  theme(
+    axis.title = element_text(size = 18),  # Adjusts font size for axis titles
+    axis.text = element_text(size = 18),   # Adjusts font size for axis labels
+    legend.title = element_text(size = 18), # Adjusts font size for legend title
+    legend.text = element_text(size = 18)   # Adjusts font size for legend text
+  )
+# nega
 # negative relationship between turnover and proportion of estimated species Diversity we have observed
 
 
@@ -131,18 +140,29 @@ ggplot(full.com,
   geom_point(color = "black", size = 2) + 
   #geom_point(aes(x = 1:nrow(full.com), y = Estimator, color = propObs), size = 2) + 
   labs(x = "Rank-order Observed Value", y = "Diversity") +
+  annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -28, vjust = 1.1, size = 6) +
   theme_bw() + 
   scale_color_viridis_c(option = "D", name = "turnover") +
-  scale_alpha(range = c(0, 0.5), guide = "none")  
+  scale_alpha(range = c(0, 0.5), guide = "none")  +
+  theme(
+    axis.title = element_text(size = 18),  # Adjusts font size for axis titles
+    axis.text = element_text(size = 18),   # Adjusts font size for axis labels
+    legend.title = element_text(size = 18), # Adjusts font size for legend title
+    legend.text = element_text(size = 18)   # Adjusts font size for legend text
+  )
 
 # Overlap with estimator +/- se
 full.com$signifText<-"Overlap"
 full.com$signifText[which(full.com$signif==1)]<-"No Overlap"
 ggplot(full.com,aes(x=turnover, y=as.factor(signifText)))+
-  labs(y = "", x = "Mean Species Turnover") +
+  labs(y = "Diversity", x = "Mean Species Turnover") +
   geom_violin() + stat_summary(
     fun = "mean", geom = "point", shape = 20, size = 3, color = "black")+
-  theme_minimal()
+  theme_minimal()+
+  theme(
+    axis.title = element_text(size = 18),  # Adjusts font size for axis titles
+    axis.text = element_text(size = 16),   # Adjusts font size for axis labels
+  )
 
 signif_model<-glm(signif~turnover,full.com,family="binomial")
 summary(signif_model)

@@ -132,8 +132,14 @@ data <- data.frame(value = rnorm(1000, mean = 50, sd = 10))
 ggplot(thresh90, aes(x = y.thresh)) +
   geom_histogram(binwidth = 5,color='black') +
   scale_fill_viridis_c(option = "B") +
-  labs(x = "Years of sampling to reach threshold", y = "Count") +
-  theme_minimal()
+  labs(x = "Years of sampling to reach threshold", y = "Count of Sites") +
+  theme_minimal() +
+  theme(
+    axis.title = element_text(size = 18),  # Adjusts font size for axis titles
+    axis.text = element_text(size = 18),   # Adjusts font size for axis labels
+    legend.title = element_text(size = 18), # Adjusts font size for legend title
+    legend.text = element_text(size = 18)   # Adjusts font size for legend text
+  )
 
 
 
