@@ -95,8 +95,6 @@ for (i in 1:nrow(misIDsubs)){
   }
 }
 
-
-
 # Identify sciNames to remove
 
 removeTaxa<-taxa$sciName[which(taxa$family!="Carabidae")]
@@ -121,5 +119,5 @@ fullData$sciName[which(fullData$sciName %in% removeTaxa)]<-NA
 
 #save all of the data for other use
 FullAndCleanData<-list(fullData=fullData,field=field,sort=sort,expert=expert,para=para,taxa=taxa,completeness=completeness)
-save(FullAndCleanData,file=paste0(datapath,"FullAndCleanData.Robj"))
+save(FullAndCleanData,file=paste0(datapath,"CleanNEONData.Robj"))
 
