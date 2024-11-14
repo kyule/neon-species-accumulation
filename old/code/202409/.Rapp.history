@@ -1,0 +1,14 @@
+product<-"DP1.10022.001"
+start<-"2000-01"#
+end<-"2023-12"
+sites<-"all"
+source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
+library(neonUtilities)
+NeonData<-loadByProduct(dpID=product,
+site=sites,#
+                          startdate=start,#
+                          enddate=end,#
+                          token=Neon_Token, #
+                          check.size=FALSE, #
+                          include.provisional=TRUE)
+save(NeonData, file="/Users/kelsey/Github/neon-species-accumulation/data/testIncludingProvisional/NeonData.Robj")

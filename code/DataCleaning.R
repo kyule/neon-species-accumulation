@@ -6,24 +6,21 @@
 # datapath<-"user defined path"
 # codepath<-"user defined path"
 
-#And users must have configured the DownloadNEONData.R file as desired for their work
-# Indicate whether new data should be downloaded, downloads are time consuming so this is not recommended
-NewData<-FALSE
+# users must have run the DownloadNEONData.R file, configured as desired
 
-# And users should remove below line that loads in personal paths
+# users should remove below line that loads in personal paths and NEON token
 source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
 
 # load necessary libraries
 library(dplyr)
 library(stringr)
+library(lubridate)
 
 # load NEON carabid taxonomy table
 taxa<-read.csv(paste0(datapath,"CarabidTaxonomicList_March2024.csv"))
 
-# Load or download the NEON observation data
-if(NewData==TRUE|file.exists(paste0(datapath,"NeonData.Robj"))==FALSE){
-  source(paste0(codepath,"DownloadNEONData.R"))
-  }else{load(file=paste0(datapath,"NeonData.Robj"))}
+# Load the NEON observation data
+load(file=paste0(datapath,"NeonData.Robj"))
 
 # Pull tables of interest
 field<-NeonData$bet_fielddata
@@ -34,86 +31,95 @@ expert<-NeonData$bet_expertTaxonomistIDProcessed
 #  Subset field to whether sample was collected to start main analysis file
 main<-field[which(field$sampleCollected=="Y"),]
 
-#subset to columns of interest
-main<-main[,c("plotID","siteID","nlcdClass","setDate","collectDate","sampleID")]
-
 #Subset sort table to carabids, columns of interest and join to field table
-main<-left_join(main,
+main<-full_join(main,
                 sort[which(sort$sampleType %in% c("other carabid","carabid")),c("sampleID","subsampleID","taxonID","individualCount")],
                 join_by("sampleID"=="sampleID"))
 
-#### Determine incorrect species identifications and propagate correct identifications into main sorting table
-
-# Join necessary columns of expert and parataxonomist tables
-pinned<-left_join(para[,c("subsampleID","individualID","taxonID")],
-                  expert[c("individualID","taxonID")],
-                  join_by("individualID"=="individualID"),
-                  suffix=c(".para",".expert"))
-
-# For all pinned specimens choose the ID of the expert when exists, parataxonomist otherwise
-pinned$taxonID<-pinned$taxonID.expert
-pinned$taxonID[is.na(pinned$taxonID)]<-pinned$taxonID.para[is.na(pinned$taxonID)]
-
-### Create records for the pinned individuals in the main table
-# choose which subsamples have pinned specimens associated with them
-subsToUpdate<-unique(pinned$subsampleID)
-main$individualCountFinal<-main$individualCount
-  
-for (i in 1:length(subsToUpdate)){
-  row<-which(main$subsampleID==subsToUpdate[i])
-  pinnedIndivs<-pinned[which(pinned$subsampleID==subsToUpdate[i]),]
-  main$individualCountFinal[row]<-main$individualCountFinal[row]-nrow(pinnedIndivs)
-  newrecords<-data.frame(plotID=main$plotID[row],siteID=main$siteID[row],
-                         nlcdClass=main$nlcdClass[row],setDate=main$setDate[row],
-                         collectDate=main$collectDate[row],sampleID=main$sampleID[row],
-                         subsampleID=main$subsampleID[row],taxonID=pinnedIndivs$taxonID,
-                         individualCount=1,individualCountFinal=1)
-  main<-rbind(main,newrecords)
-}
-
-# Replace NAs in individualCount with 0s
-fullData<-main[ , !(names(main) %in% "individualCount")] # replace to not risk losing what took a long time to run :)
-fullData$individualCountFinal[is.na(fullData$individualCountFinal)]<-0
-
-# Replace subspecies with species level ID in the taxa table
+# Replace subspecies with species level ID in the taxa table and subgenus to genus level
 taxa$sciName<-taxa$scientificName
 taxa$sciName[which(taxa$taxonRank=="subspecies")]<-word(taxa$sciName[which(taxa$taxonRank=="subspecies")], 1,2, sep=" ")
 taxa$sciName<-str_replace(taxa$sciName," sp.","")
 taxa$sciName<-str_replace(taxa$sciName," spp.","")
+taxa$sciName[which(taxa$taxonRank=="subgenus")]<-word(taxa$sciName[which(taxa$taxonRank=="subgenus")], 1,1, sep=" ")
 
-# Join main and taxonomy tables & Subset taxonomy table to fields of interest, removes subspecies
-fullData<-left_join(fullData,
-                taxa[,c("taxonID","family","sciName")],
-                join_by("taxonID"=="taxonID"))
+# Replace taxonID with sciName used in analysis in all tables
+main<-left_join(main,taxa[,c("taxonID","sciName")],join_by("taxonID"=="taxonID"))
+main<-subset(main,select=-taxonID)
+sort<-left_join(sort,taxa[,c("taxonID","sciName")],join_by("taxonID"=="taxonID"))
+sort<-subset(sort,select=-taxonID)
+para<-left_join(para,taxa[,c("taxonID","sciName")],join_by("taxonID"=="taxonID"))
+para<-subset(para,select=-taxonID)
+expert<-left_join(expert,taxa[,c("taxonID","sciName")],join_by("taxonID"=="taxonID"))
+expert<-subset(expert,select=-taxonID)
 
-# Drop all instances in which identification was not Carabid or was only to the family level
-fullData<-fullData[which(fullData$family %in% c(NA,"Carabidae")),]
-fullData<-fullData[-which(fullData$sciName %in% c("Carabidae","Carabidae")),]
+#### Determine incorrect species identifications and propagate correct identifications into main sorting table
+
+# Join necessary columns of expert and parataxonomist tables
+pinned<-left_join(expert[c("individualID","sciName")],
+                  para[,c("subsampleID","individualID","sciName")],
+                  join_by("individualID"=="individualID"),
+                  suffix=c(".expert",".para"))
+
+#### Determine misidentifications
+
+misIDs<-pinned[which(pinned$sciName.expert!=pinned$sciName.para),]
+nrow(misIDs)/nrow(pinned) # total misID rate for all expert ID beetles is ~19%
+
+#### Propagate correct identifications into main sorting table
+# Note that correcting only the individuals in the sorting table that are explicitly known to be wrong 
+# is most conservative in that it does not assume perfect sorting by parataxonomists 
+# and it maximizes the number of "species" found
+
+# choose which subsamples have pinned specimens associated with misidentified individuals and define indiv counts
+misIDsubs<-data.frame(misIDs %>% group_by(subsampleID,sciName.expert,sciName.para) %>% count())
+main$individualCount[is.na(main$individualCount)]<-0
+main$finalIndivCount<-main$individualCount
+
+# Add new records for misidentified subsample individuals
+
+fullData<-main
+for (i in 1:nrow(misIDsubs)){
+  print(paste0("Correcting misidentification ",i, " of ",nrow(misIDsubs)))
+  # find the matching row
+  row<-which(fullData$subsampleID==misIDsubs$subsampleID[i] & fullData$sciName==misIDsubs$sciName.para[i])
+  # update the main records individual count
+  if(length(row)==1){
+    fullData$finalIndivCount[row]<-fullData$finalIndivCount[row]-misIDsubs$n[i]
+  # create new records
+    newrecords<-fullData[row,]
+    newrecords$sciName<-misIDsubs$sciName.expert[i]
+    newrecords$finalIndivCount<-misIDsubs$n[i]
+  #add new records
+    fullData<-rbind(fullData,newrecords)
+  }
+}
 
 
-##### Sampling effort by year,site,nlcdclass
 
-# Table by number of individuals
-fullData$year<-format(as.Date(fullData$collectDate),'%Y')
-effort<-data.frame(fullData %>% 
-                           group_by(siteID,nlcdClass,year) %>% 
-                           summarise(indivs=sum(individualCountFinal)))
+# Identify sciNames to remove
 
-# Table of trapping days x siteHabitat x year
-dhy_effort<-fullData[which(duplicated(fullData$sampleID)==FALSE),]
-dhy_effort$trapDay<-as.numeric(as.Date(dhy_effort$collectDate) - as.Date(dhy_effort$setDate))
-daysEffort<-data.frame(dhy_effort %>%
-                         group_by(siteID,nlcdClass,year) %>%
-                         summarise(days=sum(trapDay)))
+removeTaxa<-taxa$sciName[which(taxa$family!="Carabidae")]
+removeTaxa<-c(removeTaxa,taxa$sciName[grep("Carabidae",taxa$sciName)])
 
-# Get individuals and days together
-effort<-full_join(effort,daysEffort,join_by("siteID"=="siteID","nlcdClass"=="nlcdClass","year"=="year"))
+# Determine number of traps by year, 
+# proportion of individuals not sufficiently ID'd, 
+# and error rate by site x year combo
 
+field<-field[which(field$sampleCollected=="Y"),]
+field$year<-year(field$collectDate)
+completeness<-data.frame(field %>% group_by(siteID,year) %>% summarise(traps=length(unique(sampleID))))
 
-### Save these data for analyses
-CleanedData<-list(fullData=fullData,effort=effort)
-save(CleanedData,file=paste0(datapath,"CleanedData.Robj"))
+fullData$year<-year(fullData$collectDate)
+sum.fullTaxa<-data.frame(fullData %>% group_by(siteID,year) %>% summarise(all=sum(finalIndivCount),rems=sum(finalIndivCount[which(sciName %in% removeTaxa)])))
+sum.fullTaxa$propRem<-sum.fullTaxa$rems/sum.fullTaxa$all
 
-#Remove unnecessary data
+completeness<-full_join(completeness,sum.fullTaxa,join_by("siteID"=="siteID","year"=="year"))
 
-rm(list=ls()[! ls() %in% c("CleanedData")])
+# Replace sciName for records identified only to family or which are not carabids with NA
+fullData$sciName[which(fullData$sciName %in% removeTaxa)]<-NA
+
+#save all of the data for other use
+FullAndCleanData<-list(fullData=fullData,field=field,sort=sort,expert=expert,para=para,taxa=taxa,completeness=completeness)
+save(FullAndCleanData,file=paste0(datapath,"FullAndCleanData.Robj"))
+
