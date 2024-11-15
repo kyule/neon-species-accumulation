@@ -27,15 +27,11 @@ load(file=paste0(datapath,"CleanNEONData.Robj"))
 fullData<-FullAndCleanData$fullData
 completeness<-FullAndCleanData$completeness
 
-complete<-completeness[which(completeness$propRem<0.1),]
-complete$siteYear<-paste0(complete$siteID,"_",complete$year)
-fullData$siteYear<-paste0(fullData$siteID,"_",fullData$year)
-
 # Function for creating incidence data frame
 
 inc_data<-function(input.data){
   
-  # find the unique samples and spp for that year
+  # find the unique samples and spp
   samps<-unique(input.data$sampleID)
   spp<-unique(input.data$sciName)
   spp<-spp[is.na(spp)==FALSE]
@@ -75,15 +71,13 @@ inc_data<-function(input.data){
   
   #iNext results
   
-  if ((length(unique(input.data$year))>1)){
   out<-try({
-    iNEXT(input,q=c(0,1,2),datatype='incidence_freq',knot=30,endpoint=ncol(presabs)*10)},
+    iNEXT(input,q=c(0,1),datatype='incidence_freq',knot=30,endpoint=ncol(presabs)*10)},
     silent=TRUE)
   if (inherits(out, "try-error")) {
     return.df$out <- paste("Error")
   } else {
     return.df$out<-out
-  }
   }
   
   return(return.df)
@@ -104,33 +98,19 @@ for (i in 1:length(results)){
   dat<-fullData[which(fullData$siteID==sites[i]),]
   rems<-completeness$year[which(completeness$siteID==sites[i] & completeness$propRem>0.1)]
   rems<-c(rems,completeness$year[which(completeness$siteID==sites[i] & is.nan(completeness$propRem))])
-  # choose to remove years for which more than 10% of the beetles were not identified to a lower resolution than "carabid"
+  # choose to remove years for which more than 10% of the beetles were not carabids and/or not identified to a lower resolution than "carabid"
   if (length(rems)>0) {dat<-dat[-which(dat$year %in% rems),]}
   years<-unique(dat$year)
   
   # Create list structures for the site
-  results[[i]]<-setNames(vector(mode="list",length=(length(years)+1)),c(years,"full"))
-  inc_freq<-setNames(vector(mode="list",length=(length(years)+1)),c(years,"full"))
-  
-  
-  for (j in 1:length(years)){
-    # loop through the years of sampling at the site
-    print(paste(sites[i],years[j]),sep=": ")
-    
-    # pull out the data for the specific year
-    datyear<-dat[which(dat$year==years[j]),]
-    
-    # results by year
-    results[[i]][[j]]<-inc_data(datyear)
-    inc_freq[[j]]<-results[[i]][[j]]$inc_freq
-    
-  }
+  results[[i]]<-setNames(vector(mode="list",length=1),"full")
+  inc_freq<-setNames(vector(mode="list",length=1),"full")
   
   # Now do the same across the full data for the site
     print(paste0(sites[i]," Full Data"))
     
-    results[[i]][[j+1]]<-inc_data(dat)
-    inc_freq[[j+1]]<-results[[i]][[j+1]]$inc_freq
+    results[[i]][[1]]<-inc_data(dat)
+    inc_freq[[1]]<-results[[i]][[1]]$inc_freq
     
     
     ### Calculate turnover measures
