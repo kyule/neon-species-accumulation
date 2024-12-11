@@ -19,6 +19,7 @@ library("MASS")
 library("reshape")
 library("cowplot")
 library("gridExtra")
+library("patchwork")
 
 # Load in the formatted clean data, or download and create it. 
 #Make sure the results are correctly configured
@@ -145,20 +146,34 @@ full.com$signifText.div<-"Overlap"
 full.com$signifText.rich[which(full.com$signif.rich==1)]<-"No Overlap"
 full.com$signifText.div[which(full.com$signif.div==1)]<-"No Overlap"
 
-violin.dat<-data.frame()
-
-
-ggplot(full.com,aes(x=turnover, y=as.factor(signifText.rich)))+
+richplot<-ggplot(full.com,aes(x=turnover, y=as.factor(signifText.rich)))+
   labs(y = "Richness", x = "Mean Species Turnover") +
   geom_violin() + stat_summary(
     fun = "mean", geom = "point", shape = 20, size = 3, color = "black")+
   theme_minimal()   + theme(
-    axis.title = element_text(size = 18),  # Adjusts font size for axis titles
-    axis.text = element_text(size = 16),   # Adjusts font size for axis labels
+    axis.title.x = element_blank(), 
+    axis.text.x = element_blank(),    
+    axis.title.y = element_text(size = 18),  
+    axis.text.y = element_text(size = 16)     
   )
 
+divplot<-ggplot(full.com,aes(x=turnover, y=as.factor(signifText.div)))+
+  labs(y = "Diversity", x = "Mean Species Turnover") +
+  geom_violin() + stat_summary(
+    fun = "mean", geom = "point", shape = 20, size = 3, color = "black")+
+  theme_minimal()   + theme(
+    axis.title = element_text(size = 18),  
+    axis.text = element_text(size = 16)  
+  )
 
-signif_model<-glm(signif~turnover,full.com,family="binomial")
-summary(signif_model)
+combined_plot <- richplot/divplot
+combined_plot
+
+
+signif_model_rich<-glm(signif.rich~turnover,full.com,family="binomial")
+summary(signif_model_rich)
+
+signif_model_div<-glm(signif.div~turnover,full.com,family="binomial")
+summary(signif_model_div)
 
 
