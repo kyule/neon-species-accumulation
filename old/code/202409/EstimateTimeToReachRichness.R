@@ -26,7 +26,7 @@ library("MASS")
 # Load in the formatted clean data, or download and create it. 
 #Make sure the results are correctly configured
 
-#if(NewResults==TRUE|file.exists(paste0(datapath,"results.Robj"))==FALSE){source(paste0(codepath,"accumulation.R"))}else{load(file=paste0(datapath,"resultsFull.Robj"))}
+load(file=paste0(datapath,"iNEXTandTurnoverResults.Robj"))
 
 # Remove GUAN due to very low number of beetles captured. 
 ### Only 36 beetles in 7 years of sampling, almost complete turnover in communities between most years
