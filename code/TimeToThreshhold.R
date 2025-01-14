@@ -156,7 +156,7 @@ ggplot(inext.rich, aes(x = y, y = qD,group=site,color=as.numeric(turnover))) +
 ggplot(inext.div, aes(x = y, y = qD,group=site,color=as.numeric(turnover))) +
   geom_line(size=1) +
   facet_wrap(~ domainName) +
-  labs(x = "Years", y = "Estimated Richness") +
+  labs(x = "Years", y = "Estimated Diversity") +
   theme_minimal() +
   geom_hline(data = thresh90.div, aes(yintercept = thresh), linetype = "dashed") +
   geom_point(data = thresh90.div, aes(x = y.thresh, y = thresh), color = "darkgrey", size = 2) +
@@ -180,9 +180,6 @@ plotrich <- ggplot(thresh90.rich, aes(x = y.thresh)) +
     legend.text = element_text(size = 18)
   )
 
-plotrich
-
-
 plotdiv<-ggplot(thresh90.div, aes(x = y.thresh)) +
   geom_histogram(binwidth = 0.5,color='black') +
   scale_y_continuous(limits = c(0, 20)) +
@@ -196,8 +193,6 @@ plotdiv<-ggplot(thresh90.div, aes(x = y.thresh)) +
     legend.title = element_text(size = 18), 
     legend.text = element_text(size = 18)   
   )
-
-plotdiv
 
 combined_plot <- plotrich + plotdiv + 
   plot_layout(guides = "collect") + 

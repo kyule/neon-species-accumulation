@@ -75,10 +75,34 @@ full.com$signif.div<- ifelse(full.com$Observed.div > (full.com$Estimator.div + f
 full.com<-full.com[order(full.com$Observed.rich,decreasing=TRUE),]
 full.com$obsRank.rich<-1:nrow(full.com)
 
+# Model proportion of estimated hill number observed to date as a function of the estimated value, turnover and number of years of sampling
+
+summary(glm(propObs.rich~Estimator.rich+turnover+years,family='quasibinomial',full.com))
+summary(glm(propObs.div~Estimator.div+turnover+years,family='quasibinomial',full.com))
+
+# Plot the richness and turnover relationships
+
+rich <- ggplot(full.com, aes(x = turnover, y = propObs.rich, color = as.numeric(Estimator.rich))) +
+  geom_point(aes(size = years)) +
+  geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
+  labs(x = "", y = "Observed/Estimated Richness") +
+  theme_minimal() +
+  scale_color_viridis_c(option = "D", name = "Est. richness")
+
+div <- ggplot(full.com, aes(x = turnover, y = propObs.div, color = as.numeric(Estimator.div))) +
+  geom_point(aes(size = years)) +
+  geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
+  labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
+  theme_minimal() +
+  scale_color_viridis_c(option = "D", name = "Est. diversity")
+
+combined <- rich / div + 
+  theme(legend.position = "right")
+
+print(combined)
 
 # Plot overlap in observed vs estimated Hill numbers
 
-# Richness plot
 rich.plot <- 
   ggplot(full.com, 
          aes(x = obsRank.rich, y = Observed.rich)) +
@@ -106,7 +130,6 @@ rich.plot <-
     panel.spacing = unit(0, "cm")
   )
 
-# Diversity plot
 div.plot <- 
   ggplot(full.com, 
          aes(x = obsRank.rich, y = Observed.div)) +
@@ -136,7 +159,6 @@ div.plot <-
     panel.spacing = unit(0, "cm")
   )
 
-# Arrange the plots using cowplot for better control
 plot_grid(rich.plot, div.plot, ncol = 1, align = 'v', axis = 'tb')
 
 
