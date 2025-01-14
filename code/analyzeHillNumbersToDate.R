@@ -87,6 +87,7 @@ rich <- ggplot(full.com, aes(x = turnover, y = propObs.rich, color = as.numeric(
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
   labs(x = "", y = "Observed/Estimated Richness") +
   theme_minimal() +
+  annotate("text", x = -Inf, y = Inf, label = "a", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
   scale_color_viridis_c(option = "D", name = "Est. richness")
 
 div <- ggplot(full.com, aes(x = turnover, y = propObs.div, color = as.numeric(Estimator.div))) +
@@ -94,6 +95,7 @@ div <- ggplot(full.com, aes(x = turnover, y = propObs.div, color = as.numeric(Es
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
   labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
   theme_minimal() +
+  annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.1, vjust = 3, size = 6) +
   scale_color_viridis_c(option = "D", name = "Est. diversity")
 
 combined <- rich / div + 
