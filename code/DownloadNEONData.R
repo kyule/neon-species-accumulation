@@ -8,13 +8,16 @@
 # codepath<-"user defined path"
 # Neon_Token<-"user's token"
 
+# use the github version for now
+#remotes::install_github("NEONScience/NEON-utilities/neonUtilities")
+
 #### And users should define their variables for the NEON data download
 
 # data product of interest, below is for Carabids
 product<-"DP1.10022.001"
 
 # start and end dates, must be formatted as "YYYY-MM" or NA for all time
-start<-"2000-01"
+start<-"2012-01"
 end<-"2024-05"
 
 # sites, concatenated list of siteCodes or use "all" for all sites
@@ -30,11 +33,12 @@ library(neonUtilities)
 
 
 # Use loadByProduct to download the data
-  NeonData<-loadByProduct(dpID=product,
+NeonData<-loadByProduct(dpID=product,
                           site=sites,
                           startdate=start,
                           enddate=end,
-                          token=Neon_Token, 
                           check.size=FALSE, 
-                          include.provisional=FALSE)
-  save(NeonData, file=paste0(datapath,"NeonData.Robj"))
+                          release= 'RELEASE-2025',
+                          include.provisional=FALSE,
+                        token=Neon_Token)
+save(NeonData, file=paste0(datapath,"NeonData.Robj"))

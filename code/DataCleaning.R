@@ -17,7 +17,7 @@ library(stringr)
 library(lubridate)
 
 # load NEON carabid taxonomy table
-taxa<-read.csv(paste0(datapath,"CarabidTaxonomicList_March2024.csv"))
+taxa<-read.csv(paste0(datapath,"OS_TAXON_BEETLE-20220330T142149.csv"))
 
 # Load the NEON observation data
 load(file=paste0(datapath,"NeonData.Robj"))
@@ -64,7 +64,7 @@ pinned<-left_join(expert[c("individualID","sciName")],
 #### Determine misidentifications
 
 misIDs<-pinned[which(pinned$sciName.expert!=pinned$sciName.para),]
-nrow(misIDs)/nrow(pinned) # total misID rate for all expert ID beetles is ~19%
+nrow(misIDs)/nrow(pinned) # total misID rate for all expert ID beetles is ~18%
 
 #### Propagate correct identifications into main sorting table
 # Note that correcting only the individuals in the sorting table that are explicitly known to be wrong 
