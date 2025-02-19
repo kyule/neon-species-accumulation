@@ -19,6 +19,9 @@ library("reshape2")
 #set seed
 set.seed(85705)
 
+# set completeness threshold
+comp.thresh<-0.10
+
 # Load in the formatted clean data
 
 load(file=paste0(datapath,"CleanNEONData.Robj"))
@@ -96,9 +99,9 @@ for (i in 1:length(results)){
   
   #subset data to the field site of interest and determine the years of analysis
   dat<-fullData[which(fullData$siteID==sites[i]),]
-  rems<-completeness$year[which(completeness$siteID==sites[i] & completeness$propRem>0.1)]
+  rems<-completeness$year[which(completeness$siteID==sites[i] & completeness$propRem>comp.thresh)]
   rems<-c(rems,completeness$year[which(completeness$siteID==sites[i] & is.nan(completeness$propRem))])
-  # choose to remove years for which more than 10% of the beetles were not carabids and/or not identified to a lower resolution than "carabid"
+  # choose to remove years for which more than the completeness threshhold of the beetles were not carabids and/or not identified to a lower resolution than "carabid"
   if (length(rems)>0) {dat<-dat[-which(dat$year %in% rems),]}
   years<-unique(dat$year)
   
