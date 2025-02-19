@@ -128,7 +128,7 @@ for (i in 1:length(results)){
     # loop through the years of sampling at the site
     print(paste(sites[i],years[j]),sep=": ")
     
-    # pull out the data for the specific year
+    # pull out the data for the years to date
     datyear<-dat[which(dat$year<=years[j]),]
     
     # results by year
@@ -160,7 +160,6 @@ for (i in 1:length(results)){
   
 }
 
-save(results,file=paste0(datapath,"iNEXTandTurnoverResults.Robj"))
 
 
 
@@ -179,3 +178,10 @@ warnings_flat <- data.frame(unlist(warnings_list, recursive = TRUE, use.names = 
 warnings_flat<-data.frame(site=row.names(warnings_flat),warning=warnings_flat)
 warnings_flat$year<-sapply(strsplit(row.names(warnings_flat),"[.]"),"[",2)
 warnings_flat$site<-sapply(strsplit(row.names(warnings_flat),"[.]"),"[",1)
+
+results$warnings<-warnings_flat
+
+# save data
+
+save(results,file=paste0(datapath,"iNEXTandTurnoverResults.Robj"))
+

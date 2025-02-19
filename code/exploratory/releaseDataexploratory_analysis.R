@@ -65,39 +65,27 @@ Richness <- Richness[, c(1:4, ncol(Richness))]
 full.com <- left_join(Richness,Diversity,join_by("site"=="site","result_year"=="result_year"),suffix = c(".rich",".div"))
 
 #### Pull the turnovers out of the results list and input into the full community data frame
-library(dplyr)
-
 # Calculate cumulative mean for each site and year
-turnover.list<-lapply(results,function(item) data.frame(item$turnover))
-turnover.list <- bind_rows(turnover.list,.id="site")
+turnover.list <- lapply(results, function(item) data.frame(item$turnover))
+turnover.list <- bind_rows(turnover.list, .id = "site")
+
 turnover <- turnover.list %>%
   group_by(site) %>%
   arrange(year) %>%
   mutate(turnover = cummean(total))  # This gives the cumulative mean for each site
 
 # Calculate the mean for all years for each site and add a row for 'full'
-turnover_full <- turnover %>%
+turnover_full <- turnover.list %>%  # Use the original data, not the cumulative mean
   group_by(site) %>%
-  summarise(year = "full", turnover = mean(turnover))
-turnover <- turnover[,which(names(turnover) %in% c("site","year","turnover"))]
-turnover$year<-as.character(turnover$year)
-turnover<-rbind(turnover,turnover_full)
+  summarise(year = "full", turnover = mean(total))  # Mean of total, not turnover
 
+# Ensure year is a character for consistency
+turnover$year <- as.character(turnover$year)
 
+# Bind the full dataset
+turnover <- bind_rows(turnover, turnover_full)
 
-
-
-
-turnover<- turnover.list %>%
-  arrange(site, year) %>% 
-  group_by(site) %>%
-  mutate(mean_to_date = cummean(total))
-turnover$year<-as.character(turnover$year)
-turnover<-turnover[,which(names(turnover) %in% c("site","year","mean_to_date"))]
-names(turnover)[3]<-"turnover"
-turnover_full <-data.frame(turnover %>% group_by(site) %>% summarise(turnover=mean(turnover)))
-turnover_full$year<-'full'
-turnover<-rbind(turnover,turnover_full)
+# Bind turnover to the full community dataset
 
 full.com <- left_join(full.com,turnover,join_by("site"=="site","result_year"=="year"))
 
