@@ -21,6 +21,8 @@ library("cowplot")
 library("gridExtra")
 library("patchwork")
 library("purrr")
+library("glmtoolbox")
+library('lme4')
 
 # Load in the formatted clean data, or download and create it. 
 #Make sure the results are correctly configured
@@ -33,14 +35,12 @@ load(file=paste0(datapath,"iNEXTandTurnoverResults.Robj"))
 
 ### Pull Estimated Asymptotic and Observed Richness and Diversity Values out of the results list -- full data only
 
-
-
 asyest.list <- lapply(results, function(site) {
   bind_rows(
-    lapply(names(site), function(year) {  # Iterate through all result types
-      if (!is.null(site[[year]]$out$AsyEst)) {  # Check if AsyEst exists
+    lapply(names(site), function(year) {  # Iterate through all result years
+      if (is.list(site[[year]]) && !is.null(site[[year]]$out$AsyEst)) {  # Check if AsyEst exists
         df <- data.frame(site[[year]]$out$AsyEst)
-        df$result_year <- year
+        df$year <- year
         return(df)
       } else {
         return(NULL)  # Skip missing values
@@ -62,7 +62,7 @@ Richness <- asyest[grep("Richness", rownames(asyest)), ]
 Richness <- Richness[, c(1:4, ncol(Richness))]  
 
 
-full.com <- left_join(Richness,Diversity,join_by("site"=="site","result_year"=="result_year"),suffix = c(".rich",".div"))
+full.com <- left_join(Richness,Diversity,join_by("site"=="site","year"=="year"),suffix = c(".rich",".div"))
 
 #### Pull the turnovers out of the results list and input into the full community data frame
 # Calculate cumulative mean for each site and year
@@ -84,35 +84,51 @@ turnover$year <- as.character(turnover$year)
 
 # Bind the full dataset
 turnover <- bind_rows(turnover, turnover_full)
+turnover<-turnover[,which(names(turnover) %in% c("site","year","turnover"))]
 
 # Bind turnover to the full community dataset
 
-full.com <- left_join(full.com,turnover,join_by("site"=="site","result_year"=="year"))
+full.com <- left_join(full.com,turnover,join_by("site"=="site","year"=="year"))
 
 full.com$propObs.rich<-full.com$Observed.rich/full.com$Estimator.rich
 full.com$propObs.div<-full.com$Observed.div/full.com$Estimator.div
 
+
 # Take into account the number of traps that have been sampled
-traps_df <- map_dfr(names(results), function(site) {
-  map_dfr(names(results[[site]]), function(year) {
-    num_traps <- length(results[[site]][[year]]$traps)  # Count traps
-    data.frame(site = site, year = year, traps = num_traps)
-  })
-})
+trap.df <- bind_rows(lapply(names(results), function(site_name) {  # Iterate over sites
+  site <- results[[site_name]]
+  
+  bind_rows(lapply(names(site), function(year) {  # Iterate over years
+    if (is.list(site[[year]]) && !is.null(site[[year]]$traps)) {  
+      data.frame(
+        site = site_name,
+        year = year,
+        traps = length(site[[year]]$traps)  # Get the length of the traps vector
+      )
+    } else {
+      return(NULL)  # Skip missing values
+    }
+  }))
+}))
+
+full.com<-left_join(full.com,trap.df,join_by("site"=="site","year"=="year"))
+
+# Add number of years of sampling
+
+full.com <- full.com %>%
+  group_by(site) %>%             
+  arrange(year, .by_group = TRUE) %>% 
+  mutate(years = row_number())
+
+full.com$years[which(full.com$year=="full")]<-full.com$years[which(full.com$year=="full")]-1
 
 
-trap.list<-lapply(results,function(item) data.frame(item$traps))
-trap.list <- bind_rows(trap.list,.id="site")
-trap<- trap.list %>%
-  arrange(site, year) %>% 
-  group_by(site) %>%
-  mutate(mean_to_date = cummean(traps))
-trap$year<-as.character(trap$year)
+## Add warning or not
+names(results[["warnings"]])[2]<-'warning'
+full.com<-left_join(full.com,results[["warnings"]],join_by("site"=="site","year"=="year"))
+full.com$warning[which(is.na(full.com$warning)==FALSE)]<-"Y"
+full.com$warning[which(is.na(full.com$warning)==TRUE)]<-"N"
 
-trap.list<-lapply(results,function(item) nrow(data.frame(item$full$traps)))
-trap.list <- melt(trap.list)
-names(trap.list)<-c("traps","site")
-full.com<-left_join(full.com,trap.list,join_by("site"=="site"))
 
 ### Plot observed vs Estimated with errors around variance
 
@@ -130,10 +146,19 @@ full.com$signif.div<- ifelse(full.com$Observed.div > (full.com$Estimator.div + f
 full.com<-full.com[order(full.com$Observed.rich,decreasing=TRUE),]
 full.com$obsRank.rich<-1:nrow(full.com)
 
+
+
+
 # Model proportion of estimated hill number observed to date as a function of the estimated value, turnover and number of years of sampling
 
-summary(glm(propObs.rich~Estimator.rich+turnover+years,family='quasibinomial',full.com))
-summary(glm(propObs.div~Estimator.div+turnover+years,family='quasibinomial',full.com))
+rich.mod<-glm(propObs.rich~Estimator.rich*turnover*years,family='quasibinomial',full.com)
+stepCriterion(rich.mod)
+summary(rich.mod)
+div.mod<-glm(propObs.div~Estimator.div*turnover*years,family='quasibinomial',full.com)
+names(stepCriterion(div.mod))
+summary(glm(propObs.div~ turnover + years + Estimator.div + turnover:years,family='quasibinomial',full.com))
+
+glmer(propObs.rich~turnover*years +(1|site),family='quasibinomial',full.com)
 
 # Plot the richness and turnover relationships
 
