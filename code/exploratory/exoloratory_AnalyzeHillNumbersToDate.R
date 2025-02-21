@@ -122,6 +122,27 @@ full.com <- full.com %>%
 
 full.com$years[which(full.com$year=="full")]<-full.com$years[which(full.com$year=="full")]-1
 
+# Define most complete estimators and associated proportions
+
+full.com$final.est.rich<-full.com$final.est.div<-full.com$prop.final.est.rich<-full.com$prop.final.est.div<-full.com$final.est.rich.se<-full.com$final.est.div.se<-full.com$final.obs.rich<-0
+
+for (i in 1:nrow(full.com)){
+  rich.est<-full.com$Estimator.rich[which(full.com$site==full.com$site[i] & full.com$year=="full")]
+  div.est<-full.com$Estimator.div[which(full.com$site==full.com$site[i] & full.com$year=="full")]
+  
+  full.com$final.est.rich.se[i]<-full.com$Est_s.e..rich[which(full.com$site==full.com$site[i] & full.com$year=="full")]
+  full.com$final.est.div.se[i]<-full.com$Est_s.e..div[which(full.com$site==full.com$site[i] & full.com$year=="full")]
+  
+  full.com$final.est.rich[i]<-rich.est
+  full.com$final.est.div[i]<-div.est
+  
+  full.com$prop.final.est.rich[i]<-full.com$Observed.rich[i]/rich.est
+  full.com$prop.final.est.div[i]<-full.com$Observed.div[i]/div.est
+  
+  full.com$final.obs.rich[i]<-full.com$Observed.rich[which(full.com$site==full.com$site[i] & full.com$year=="full")]
+  
+  
+}
 
 ## Add warning or not
 names(results[["warnings"]])[2]<-'warning'
@@ -142,14 +163,28 @@ full.com$signif.div<- ifelse(full.com$Observed.div > (full.com$Estimator.div + f
                                full.com$Observed.div < (full.com$Estimator.div - full.com$Est_s.e..div), 
                              1, 0)
 
+full.com$final.signif.rich<- ifelse(full.com$Observed.rich > (full.com$final.est.rich + full.com$final.est.rich.se) |
+                                full.com$Observed.rich < (full.com$final.est.rich - full.com$final.est.rich.se), 
+                              1, 0)
+
+full.com$final.signif.div<- ifelse(full.com$Observed.div > (full.com$final.est.div + full.com$final.est.div.se) |
+                               full.com$Observed.div < (full.com$final.est.div + full.com$final.est.div.se), 
+                             1, 0)
+
 # Create rank order observed richness values
-full.com<-full.com[order(full.com$Observed.rich,decreasing=TRUE),]
-full.com$obsRank.rich<-1:nrow(full.com)
+full<-full.com[which(full.com$year=="full"),]
+full<-full[order(full$Observed.rich,decreasing=TRUE),]
+full$obsRank<-1:nrow(full)
+
+full.com$obsRank<-0
+
+for (i in 1:nrow(full)){
+  full.com$obsRank[which(full.com$site==full$site[i])]<-full$obsRank[i]
+}
 
 
 
-
-# Model proportion of estimated hill number observed to date as a function of the estimated value, turnover and number of years of sampling
+###### Model proportion of estimated hill number observed to date as a function of the estimated value, turnover and number of years of sampling
 
 rich.mod<-glm(propObs.rich~Estimator.rich*turnover*years,family='quasibinomial',full.com)
 stepCriterion(rich.mod)
@@ -158,11 +193,11 @@ div.mod<-glm(propObs.div~Estimator.div*turnover*years,family='quasibinomial',ful
 names(stepCriterion(div.mod))
 summary(glm(propObs.div~ turnover + years + Estimator.div + turnover:years,family='quasibinomial',full.com))
 
-glmer(propObs.rich~turnover*years +(1|site),family='quasibinomial',full.com)
+glmer(propObs.rich~turnover*years +(1|site),family='binomial',full.com)
 
 # Plot the richness and turnover relationships
 
-rich <- ggplot(full.com, aes(x = turnover, y = propObs.rich, color = as.numeric(Estimator.rich))) +
+rich <- ggplot(full.com, aes(x = turnover, y = prop.final.est.rich, color = as.numeric(Estimator.rich))) +
   geom_point(aes(size = years)) +
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
   labs(x = "", y = "Observed/Estimated Richness") +
@@ -170,7 +205,7 @@ rich <- ggplot(full.com, aes(x = turnover, y = propObs.rich, color = as.numeric(
   annotate("text", x = -Inf, y = Inf, label = "a", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
   scale_color_viridis_c(option = "D", name = "Est. richness")
 
-div <- ggplot(full.com, aes(x = turnover, y = propObs.div, color = as.numeric(Estimator.div))) +
+div <- ggplot(full.com, aes(x = turnover, y = prop.final.est.div, color = as.numeric(Estimator.div))) +
   geom_point(aes(size = years)) +
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
   labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
