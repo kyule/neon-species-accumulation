@@ -186,18 +186,21 @@ for (i in 1:nrow(full)){
 
 ###### Model proportion of estimated hill number observed to date as a function of the estimated value, turnover and number of years of sampling
 
-rich.mod<-glm(propObs.rich~Estimator.rich*turnover*years,family='quasibinomial',full.com)
-stepCriterion(rich.mod)
-summary(rich.mod)
-div.mod<-glm(propObs.div~Estimator.div*turnover*years,family='quasibinomial',full.com)
-names(stepCriterion(div.mod))
-summary(glm(propObs.div~ turnover + years + Estimator.div + turnover:years,family='quasibinomial',full.com))
+a<-glm(propObs.rich~ turnover*Estimator.rich*years,family='quasibinomial',full)
+summary(a)
+stepCriterion(a)
+b<-glm(propObs.rich~ Estimator.rich*years,family='quasibinomial',full)
+summary(b)
 
-glmer(propObs.rich~turnover*years +(1|site),family='binomial',full.com)
+a<-glm(propObs.div~turnover*Estimator.div*years,family='quasibinomial',full)
+summary(a)
+stepCriterion(a)
+b<-glm(propObs.div~turnover,family='quasibinomial',full)
+summary(b)
 
 # Plot the richness and turnover relationships
 
-rich <- ggplot(full.com, aes(x = turnover, y = prop.final.est.rich, color = as.numeric(Estimator.rich))) +
+rich <- ggplot(full, aes(x = turnover, y = prop.final.est.rich, color = as.numeric(Estimator.rich))) +
   geom_point(aes(size = years)) +
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
   labs(x = "", y = "Observed/Estimated Richness") +
@@ -205,7 +208,7 @@ rich <- ggplot(full.com, aes(x = turnover, y = prop.final.est.rich, color = as.n
   annotate("text", x = -Inf, y = Inf, label = "a", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
   scale_color_viridis_c(option = "D", name = "Est. richness")
 
-div <- ggplot(full.com, aes(x = turnover, y = prop.final.est.div, color = as.numeric(Estimator.div))) +
+div <- ggplot(full, aes(x = turnover, y = prop.final.est.div, color = as.numeric(Estimator.div))) +
   geom_point(aes(size = years)) +
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
   labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
@@ -222,9 +225,9 @@ print(combined)
 
 rich.plot <- 
   ggplot(full.com, 
-         aes(x = obsRank.rich, y = Observed.rich)) +
-  geom_rect(aes(xmin = obsRank.rich - 0.5, 
-                xmax = obsRank.rich + 0.5, 
+         aes(x = obsRank, y = Observed.rich)) +
+  geom_rect(aes(xmin = obsRank - 0.5, 
+                xmax = obsRank + 0.5, 
                 ymin = -Inf, 
                 ymax = Inf, alpha = signif.rich),
             fill = "grey") +
@@ -249,9 +252,9 @@ rich.plot <-
 
 div.plot <- 
   ggplot(full.com, 
-         aes(x = obsRank.rich, y = Observed.div)) +
-  geom_rect(aes(xmin = obsRank.rich - 0.5, 
-                xmax = obsRank.rich + 0.5, 
+         aes(x = obsRank, y = Observed.div)) +
+  geom_rect(aes(xmin = obsRank - 0.5, 
+                xmax = obsRank + 0.5, 
                 ymin = -Inf, 
                 ymax = Inf, alpha = signif.div),
             fill = "grey") +
