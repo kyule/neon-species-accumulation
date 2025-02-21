@@ -1,4 +1,4 @@
-### This is the primary file for analyzing NEON species accumulation data
+### This is the primary file for formatting and plotting NEON species accumulation data
 
 #### BEFORE RUNNING
 # Users must define their own paths
@@ -15,23 +15,13 @@ set.seed(85705)
 # Load some necessary packages
 library("dplyr")
 library("ggplot2")
-library("MASS")
-library("reshape")
-library("cowplot")
-library("gridExtra")
 library("patchwork")
-library("purrr")
-library("glmtoolbox")
-library('lme4')
+library("cowplot")
 
-# Load in the formatted clean data, or download and create it. 
+# Load in the formatted clean data
 #Make sure the results are correctly configured
 
 load(file=paste0(datapath,"iNEXTandTurnoverResults.Robj"))
-
-# Remove GUAN due to very low number of beetles captured. 
-### Only 36 beetles in 7 years of sampling, almost complete turnover in communities between most years
-#results<- results[!names(results)=="GUAN"]
 
 ### Pull Estimated Asymptotic and Observed Richness and Diversity Values out of the results list -- full data only
 
@@ -150,9 +140,6 @@ full.com<-left_join(full.com,results[["warnings"]],join_by("site"=="site","year"
 full.com$warning[which(is.na(full.com$warning)==FALSE)]<-"Y"
 full.com$warning[which(is.na(full.com$warning)==TRUE)]<-"N"
 
-
-### Plot observed vs Estimated with errors around variance
-
 # Determine overlap vs. no
 
 full.com$signif.rich<- ifelse(full.com$Observed.rich > (full.com$Estimator.rich + full.com$Est_s.e..rich) |
@@ -171,6 +158,11 @@ full.com$final.signif.div<- ifelse(full.com$Observed.div > (full.com$final.est.d
                                full.com$Observed.div < (full.com$final.est.div + full.com$final.est.div.se), 
                              1, 0)
 
+full.com$signifText.rich<-"Overlap"
+full.com$signifText.div<-"Overlap"
+full.com$signifText.rich[which(full.com$signif.rich==1)]<-"No Overlap"
+full.com$signifText.div[which(full.com$signif.div==1)]<-"No Overlap"
+
 # Create rank order observed richness values
 full<-full.com[which(full.com$year=="full"),]
 full<-full[order(full$Observed.rich,decreasing=TRUE),]
@@ -182,21 +174,9 @@ for (i in 1:nrow(full)){
   full.com$obsRank[which(full.com$site==full$site[i])]<-full$obsRank[i]
 }
 
-
-
-###### Model proportion of estimated hill number observed to date as a function of the estimated value, turnover and number of years of sampling
-
-a<-glm(propObs.rich~ turnover*Estimator.rich*years,family='quasibinomial',full)
-summary(a)
-stepCriterion(a)
-b<-glm(propObs.rich~ Estimator.rich*years,family='quasibinomial',full)
-summary(b)
-
-a<-glm(propObs.div~turnover*Estimator.div*years,family='quasibinomial',full)
-summary(a)
-stepCriterion(a)
-b<-glm(propObs.div~turnover,family='quasibinomial',full)
-summary(b)
+# Remove GUAN due to very low data availability
+full.com<-full.com[which(full.com$site!="GUAN"),]
+full<- full.com[which(full.com$year=="full"),]
 
 # Plot proportion by number of years
 
@@ -209,7 +189,7 @@ ggplot(full.com,aes(x=years,y=prop.final.est.div))+
 
 # Plot the richness and turnover relationships
 
-rich <- ggplot(full, aes(x = turnover, y = prop.final.est.rich, color = as.numeric(Estimator.rich))) +
+rich <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),], aes(x = turnover, y = prop.final.est.rich, color = as.numeric(Estimator.rich))) +
   geom_point(aes(size = years)) +
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
   labs(x = "", y = "Observed/Estimated Richness") +
@@ -217,9 +197,9 @@ rich <- ggplot(full, aes(x = turnover, y = prop.final.est.rich, color = as.numer
   annotate("text", x = -Inf, y = Inf, label = "a", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
   scale_color_viridis_c(option = "D", name = "Est. richness")
 
-div <- ggplot(full, aes(x = turnover, y = prop.final.est.div, color = as.numeric(Estimator.div))) +
+div <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),], aes(x = turnover, y = prop.final.est.div, color = as.numeric(Estimator.div))) +
   geom_point(aes(size = years)) +
-  geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
+  geom_smooth(method = "lm", color = "black") +
   labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
   theme_minimal() +
   annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.1, vjust = 3, size = 6) +
@@ -233,7 +213,7 @@ print(combined)
 # Plot overlap in observed vs estimated Hill numbers
 
 rich.plot <- 
-  ggplot(full.com, 
+  ggplot(full, 
          aes(x = obsRank, y = Observed.rich)) +
   geom_rect(aes(xmin = obsRank - 0.5, 
                 xmax = obsRank + 0.5, 
@@ -260,7 +240,7 @@ rich.plot <-
   )
 
 div.plot <- 
-  ggplot(full.com, 
+  ggplot(full, 
          aes(x = obsRank, y = Observed.div)) +
   geom_rect(aes(xmin = obsRank - 0.5, 
                 xmax = obsRank + 0.5, 
@@ -292,12 +272,9 @@ plot_grid(rich.plot, div.plot, ncol = 1, align = 'v', axis = 'tb')
 
 
 # Violin plots of turnover vs. overlap with estimator +/- se
-full.com$signifText.rich<-"Overlap"
-full.com$signifText.div<-"Overlap"
-full.com$signifText.rich[which(full.com$signif.rich==1)]<-"No Overlap"
-full.com$signifText.div[which(full.com$signif.div==1)]<-"No Overlap"
 
-richplot<-ggplot(full.com,aes(x=turnover, y=as.factor(signifText.rich)))+
+
+richplot<-ggplot(full,aes(x=turnover, y=as.factor(signifText.rich)))+
   labs(y = "Richness", x = "Mean Species Turnover") +
   geom_violin() + stat_summary(
     fun = "mean", geom = "point", shape = 20, size = 3, color = "black")+
@@ -308,7 +285,7 @@ richplot<-ggplot(full.com,aes(x=turnover, y=as.factor(signifText.rich)))+
     axis.text.y = element_text(size = 16)     
   )
 
-divplot<-ggplot(full.com,aes(x=turnover, y=as.factor(signifText.div)))+
+divplot<-ggplot(full,aes(x=turnover, y=as.factor(signifText.div)))+
   labs(y = "Diversity", x = "Mean Species Turnover") +
   geom_violin() + stat_summary(
     fun = "mean", geom = "point", shape = 20, size = 3, color = "black")+
@@ -321,10 +298,10 @@ combined_plot <- richplot/divplot
 combined_plot
 
 
-signif_model_rich<-glm(signif.rich~turnover,full.com,family="binomial")
-summary(signif_model_rich)
+### save the results file for stat analysis
 
-signif_model_div<-glm(signif.div~turnover,full.com,family="binomial")
-summary(signif_model_div)
+write.csv(full.com,paste0(datapath,'communityResults.csv'),row.names=FALSE)
+
+
 
 

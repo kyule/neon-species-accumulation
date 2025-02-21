@@ -23,6 +23,7 @@ library("dplyr")
 library("ggplot2")
 library("MASS")
 library("patchwork")
+library("reshape")
 
 # Load in the formatted clean data, or download and create it. 
 #Make sure the results are correctly configured
