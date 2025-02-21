@@ -198,6 +198,15 @@ stepCriterion(a)
 b<-glm(propObs.div~turnover,family='quasibinomial',full)
 summary(b)
 
+# Plot proportion by number of years
+
+ggplot(full.com,aes(x=years,y=prop.final.est.rich))+
+          geom_point() +
+         geom_smooth()
+ggplot(full.com,aes(x=years,y=prop.final.est.div))+
+  geom_point() +
+  geom_smooth()
+
 # Plot the richness and turnover relationships
 
 rich <- ggplot(full, aes(x = turnover, y = prop.final.est.rich, color = as.numeric(Estimator.rich))) +
