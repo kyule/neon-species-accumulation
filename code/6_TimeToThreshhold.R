@@ -8,10 +8,6 @@
 # datapath<-"user defined path"
 # codepath<-"user defined path"
 
-# Users need to indicate whether they want to get new set of results
-# These these steps are very time consuming so it is recommended that they are only done if necessary
-NewResults<-FALSE
-
 # And users should remove below line that loads in personal paths
 source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
 
@@ -20,47 +16,28 @@ set.seed(85705)
 
 # Load some necessary packages
 library("dplyr")
-library("ggplot2")
-library("MASS")
-library("patchwork")
 library("reshape")
+library("ggplot2")
+library("patchwork")
 
-# Load in the formatted clean data, or download and create it. 
+# Load in the formatted clean data
 #Make sure the results are correctly configured
 
 load(file=paste0(datapath,"iNEXTandTurnoverResults.Robj"))
+full.com<-read.csv(paste0(datapath,'communityResults.csv'))
+full.com<-full.com[which(full.com$year=="full"),]
 
-# Remove GUAN due to very low number of beetles captured. 
-### Only 36 beetles in 7 years of sampling, almost complete turnover in communities between most years
-#results<- results[!names(results)=="GUAN"]
+# Remove GUAN due to low data availability
+results<- results[!names(results)=="GUAN"]
 
-### Pull Estimated Asymptotic and Observed Richness and diversity Values out of the results list -- full data only
-
-asyest.list<-lapply(results,function(item) data.frame(item$full$out$AsyEst))
-asyest <- bind_rows(asyest.list,.id="site")
-richness <- asyest[grep("Richness",rownames(asyest)),]
-diversity <- asyest[grep("Shannon",rownames(asyest)),]
-
-full.com <- left_join(richness,diversity,join_by("site"=="site"),suffix = c(".rich",".div"))
-
-
-#### Pull the turnovers out of the results list and input into the richness data frame
+# Grab turnover
 
 turnover.list<-lapply(results,function(item) data.frame(item$turnover))
 turnover.list <- bind_rows(turnover.list,.id="site")
 turnover<-data.frame(turnover.list %>% 
                        group_by(site) %>% 
                        summarise(turnover=mean(total,na.rm=TRUE),years=length(year)))
-full.com <- left_join(full.com,turnover,join_by("site"=="site"))
 
-full.com$propObs.rich<-full.com$Observed.rich/full.com$Estimator.rich
-full.com$propObs.div<-full.com$Observed.div/full.com$Estimator.div
-
-# Take into account the number of traps that have been sampled
-trap.list<-lapply(results,function(item) nrow(data.frame(item$full$traps)))
-trap.list <- melt(trap.list)
-names(trap.list)<-c("traps","site")
-full.com<-left_join(full.com,trap.list,join_by("site"=="site"))
 
 # Pull Estimated and Observed Richness and diversity by sampling Values out of the results list -- full community only
 
@@ -137,9 +114,9 @@ inext.div<-left_join(inext.div,turnover,join_by("site"=="site"))
 
 # Find x and ylims
 xlim.rich<-ceiling(max(thresh90.rich$y.thresh))
-ylim.rich<-ceiling(max(richness$Estimator))
+ylim.rich<-ceiling(max(full.com$Estimator.rich))
 xlim.div<-ceiling(max(thresh90.div$y.thresh))
-ylim.div<-ceiling(max(diversity$Estimator))
+ylim.div<-ceiling(max(full.com$Estimator.div))
 
 #Plot the accumulation curves and estimated number of years
 ggplot(inext.rich, aes(x = y, y = qD,group=site,color=as.numeric(turnover))) +
@@ -207,9 +184,9 @@ combined_plot <- plotrich + plotdiv +
 print(combined_plot)
 
 summary(thresh90.rich$y.thresh)
-# 1.51 to 52.01, mean 16.58, median 13.57
+# 1.88 to 60.68, mean 19.71, median 15.61
 summary(thresh90.div$y.thresh)
-# 0.22 to 10.40, mean 1.49, median 0.96
+# 0.30 to 6.96, mean 1.53, median 1.11
 
 
 

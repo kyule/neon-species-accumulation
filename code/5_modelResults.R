@@ -28,8 +28,6 @@ mod_dat<-full.com[which(full.com$year!="full"),] # remove duplication of full da
 mod_dat<-mod_dat[which(is.na(mod_dat$turnover)==FALSE),]
 
 mod_dat$years<-scale(mod_dat$years,center=TRUE,scale=TRUE)
-mod_dat$est.rich<-scale(mod_dat$Estimator.rich,center=TRUE,scale=TRUE)
-mod_dat$est.div<-scale(mod_dat$Estimator.div,center=TRUE,scale=TRUE)
 mod_dat$fin.est.rich<-scale(mod_dat$final.est.rich,center=TRUE,scale=TRUE)
 mod_dat$fin.est.div<-scale(mod_dat$final.est.div,center=TRUE,scale=TRUE)
 mod_dat$turnover<-scale(mod_dat$turnover,center=TRUE,scale=TRUE)
@@ -103,8 +101,6 @@ summary(signif_model_div)
 mod_dat<-full.com[which(full.com$year=="full"),] # fulld data only
 
 mod_dat$years<-scale(mod_dat$years,center=TRUE,scale=TRUE)
-mod_dat$est.rich<-scale(mod_dat$Estimator.rich,center=TRUE,scale=TRUE)
-mod_dat$est.div<-scale(mod_dat$Estimator.div,center=TRUE,scale=TRUE)
 mod_dat$fin.est.rich<-scale(mod_dat$final.est.rich,center=TRUE,scale=TRUE)
 mod_dat$fin.est.div<-scale(mod_dat$final.est.div,center=TRUE,scale=TRUE)
 mod_dat$turnover<-scale(mod_dat$turnover,center=TRUE,scale=TRUE)
