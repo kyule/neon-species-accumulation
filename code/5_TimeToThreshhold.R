@@ -183,10 +183,11 @@ combined_plot <- plotrich + plotdiv +
 
 print(combined_plot)
 
-summary(thresh90.rich$y.thresh)
-# 1.88 to 60.68, mean 19.71, median 15.61
-summary(thresh90.div$y.thresh)
-# 0.30 to 6.96, mean 1.53, median 1.11
+# save threshhold results
+
+write.csv(thresh90.rich,paste0(datapath,'richnessThresh.csv'),row.names=FALSE)
+write.csv(thresh90.div,paste0(datapath,'diversityThresh.csv'),row.names=FALSE)
+
 
 
 

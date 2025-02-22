@@ -6,7 +6,7 @@
 # datapath<-"user defined path"
 # codepath<-"user defined path"
 
-# users must have run the DownloadNEONData.R file, configured as desired
+# users must have run the 1_DownloadNEONData.R file, configured as desired
 
 # users should remove below line that loads in personal paths and NEON token
 source("/Users/kelsey/Github/neon-species-accumulation/configini.R")
