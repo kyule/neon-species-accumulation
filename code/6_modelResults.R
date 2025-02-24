@@ -21,6 +21,8 @@ library('lmerTest')
 #Make sure the results are correctly configured
 
 full.com<-read.csv(paste0(datapath,'communityResults.csv'))
+rich.thresh<-read.csv(paste0(datapath,'richnessThresh.csv'))
+div.thresh<-read.csv(paste0(datapath,'diversityThresh.csv'))
 
 # format data for full models
 
@@ -33,8 +35,6 @@ mod_dat$fin.est.div<-scale(mod_dat$final.est.div,center=TRUE,scale=TRUE)
 mod_dat$turnover<-scale(mod_dat$turnover,center=TRUE,scale=TRUE)
 
 mod_dat$obs<-1:nrow(mod_dat)
-
-
 
 #### Richness
 
@@ -73,6 +73,7 @@ step(div)
 div.final <- lmer(prop.final.est.div ~turnover + fin.est.div + years + (1 | site) + turnover:years + fin.est.div:years,
             data=mod_dat,
             control = lmerControl(optimizer = "bobyqa"))
+
 summary(div.final)
 
 # negative effect of turnover, positive effect of years, marginally negative effect of div, positive effect of years * turnover and  estimated diversity x years
@@ -131,3 +132,19 @@ div.final<-glm(prop.final.est.div~ turnover,
                 data=mod_dat)
 summary(div.final)
 # negative relationship with turnover
+
+#### reaching thresholds
+
+rich.thresh<-left_join(rich.thresh,mod_dat,join_by('site'=='site'))
+div.thresh<-left_join(div.thresh,mod_dat,join_by('site'=='site'))
+
+rich<-lm(y.thresh ~ turnover,
+          data=rich.thresh)
+summary(rich)
+# no relationship between turnover and number of years
+
+div<-lm(y.thresh ~ turnover,
+         data=div.thresh)
+summary(div)
+# number of years increases with turnover
+

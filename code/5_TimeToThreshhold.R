@@ -144,7 +144,17 @@ ggplot(inext.div, aes(x = y, y = qD,group=site,color=as.numeric(turnover))) +
   scale_color_viridis_c(option = "D",name="Avg. turnover")
 
 
-# Basic histogram
+# Histogram of years to 90% threshhold
+
+bin_stats_90 <- thresh90.rich %>%
+  mutate(bin = cut(y.thresh, breaks = 10)) %>% 
+  group_by(bin) %>%
+  summarise(count = n(), avg_turn = mean(turnover, na.rm = TRUE), .groups = "drop") %>%
+  mutate(bin_center = (as.numeric(sub("\\((.+),.*", "\\1", bin)) + 
+                         as.numeric(sub(".*,(.+)\\]", "\\1", bin))) / 2)  
+
+
+
 plotrich <- ggplot(thresh90.rich, aes(x = y.thresh)) +
   geom_histogram(binwidth = 5, color = 'black') +
   scale_y_continuous(limits = c(0, 20)) + 
