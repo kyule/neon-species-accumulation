@@ -97,7 +97,7 @@ summary(signif_model_div)
 # prob of overlap decreases with turnover
 
 
-#### Full data only analsis
+#### Full data only analysis
 
 mod_dat<-full.com[which(full.com$year=="full"),] # fulld data only
 
