@@ -105,6 +105,8 @@ sites<-left_join(sites,domains,join_by("field_domain_id"=="ID"))
 inext<-left_join(inext,sites,join_by("site"=="field_site_id"))
 thresh90.rich<-left_join(thresh90.rich,sites,join_by("site"=="field_site_id"))
 thresh90.div<-left_join(thresh90.div,sites,join_by("site"=="field_site_id"))
+thresh90.rich<-left_join(thresh90.rich,turnover,join_by("site"=="site"))
+thresh90.div<-left_join(thresh90.div,turnover,join_by("site"=="site"))
 
 inext.rich<-left_join(inext.rich,thresh90.rich,join_by("site"=="site"))
 inext.div<-left_join(inext.div,thresh90.div,join_by("site"=="site"))
@@ -144,17 +146,7 @@ ggplot(inext.div, aes(x = y, y = qD,group=site,color=as.numeric(turnover))) +
   scale_color_viridis_c(option = "D",name="Avg. turnover")
 
 
-# Histogram of years to 90% threshhold
-
-bin_stats_90 <- thresh90.rich %>%
-  mutate(bin = cut(y.thresh, breaks = 10)) %>% 
-  group_by(bin) %>%
-  summarise(count = n(), avg_turn = mean(turnover, na.rm = TRUE), .groups = "drop") %>%
-  mutate(bin_center = (as.numeric(sub("\\((.+),.*", "\\1", bin)) + 
-                         as.numeric(sub(".*,(.+)\\]", "\\1", bin))) / 2)  
-
-
-
+# Basic histogram
 plotrich <- ggplot(thresh90.rich, aes(x = y.thresh)) +
   geom_histogram(binwidth = 5, color = 'black') +
   scale_y_continuous(limits = c(0, 20)) + 
@@ -193,10 +185,12 @@ combined_plot <- plotrich + plotdiv +
 
 print(combined_plot)
 
-# save threshhold results
+# save threshold results
 
 write.csv(thresh90.rich,paste0(datapath,'richnessThresh.csv'),row.names=FALSE)
 write.csv(thresh90.div,paste0(datapath,'diversityThresh.csv'),row.names=FALSE)
+
+
 
 
 

@@ -135,9 +135,6 @@ summary(div.final)
 
 #### reaching thresholds
 
-rich.thresh<-left_join(rich.thresh,mod_dat,join_by('site'=='site'))
-div.thresh<-left_join(div.thresh,mod_dat,join_by('site'=='site'))
-
 rich<-lm(y.thresh ~ turnover,
           data=rich.thresh)
 summary(rich)

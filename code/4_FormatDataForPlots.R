@@ -20,6 +20,9 @@ library("dplyr")
 
 load(file=paste0(datapath,"iNEXTandTurnoverResults.Robj"))
 
+# Remove GUAN due to low data availability
+results<- results[!names(results)=="GUAN"]
+
 ### Pull Estimated Asymptotic and Observed Richness and Diversity Values out of the results list -- full data only
 
 asyest.list <- lapply(results, function(site) {
@@ -171,8 +174,92 @@ for (i in 1:nrow(full)){
   full.com$obsRank[which(full.com$site==full$site[i])]<-full$obsRank[i]
 }
 
-# Remove GUAN due to very low data availability
-full.com<-full.com[which(full.com$site!="GUAN"),]
-full<- full.com[which(full.com$year=="full"),]
 
+###### Threshold 
+
+
+# Pull Estimated and Observed Richness and diversity by sampling Values out of the results list -- full community only
+
+inext.list<-lapply(results,function(item) data.frame(item$full$out$iNextEst$size_based))
+inext <- bind_rows(inext.list,.id="site")
+inext.rich <- inext %>% filter(Order.q==0)
+inext.div <- inext %>% filter(Order.q==1)
+
+thresh90.rich<-data.frame(site=full.com$site,thresh=full.com$Estimator.rich*0.90)
+thresh90.div<-data.frame(site=full.com$site,thresh=full.com$Estimator.div*0.90)
+full.com$trapAvg<-full.com$traps/full.com$years
+thresh90.rich<-left_join(thresh90.rich,full.com[,c("site","trapAvg")],join_by("site"=="site"))
+thresh90.div<-left_join(thresh90.div,full.com[,c("site","trapAvg")],join_by("site"=="site"))
+
+
+## Find where the thresholds is crossed and scale years in inext data frame
+thresh90.rich$t.thresh<-NA
+inext.rich$y<-NA
+
+for (i in 1:nrow(thresh90.rich)){
+  site_data<-inext.rich[which(inext.rich$site==thresh90.rich$site[i]),]
+  inext.rich$y[which(inext.rich$site==thresh90.rich$site[i])]<-inext.rich$t[which(inext.rich$site==thresh90.rich$site[i])]/thresh90.rich$trapAvg[i]
+  diff<-site_data$qD-thresh90.rich$thresh[i]
+  
+  for (j in 1:length(diff)){
+    if (diff[j]>0){break}
+  }
+  
+  v<-site_data[c(j-1,j),c("t","qD")]
+  thresh90.rich$t.thresh[i]<-v$t[1] + (thresh90.rich$thresh[i] - v$qD[1]) * (v$t[2] - v$t[1]) / (v$qD[2] - v$qD[1])
+  
+}
+
+thresh90.div$t.thresh<-NA
+inext.div$y<-NA
+
+for (i in 1:nrow(thresh90.div)){
+  site_data<-inext.div[which(inext.div$site==thresh90.div$site[i]),]
+  inext.div$y[which(inext.div$site==thresh90.div$site[i])]<-inext.div$t[which(inext.div$site==thresh90.div$site[i])]/thresh90.div$trapAvg[i]
+  diff<-site_data$qD-thresh90.div$thresh[i]
+  
+  for (j in 1:length(diff)){
+    if (diff[j]>0){break}
+  }
+  
+  v<-site_data[c(j-1,j),c("t","qD")]
+  thresh90.div$t.thresh[i]<-v$t[1] + (thresh90.div$thresh[i] - v$qD[1]) * (v$t[2] - v$t[1]) / (v$qD[2] - v$qD[1])
+  
+}
+
+
+# Calculate the thresholds based on year instead 
+thresh90.rich$y.thresh<-thresh90.rich$t.thresh/thresh90.rich$trapAvg
+thresh90.div$y.thresh<-thresh90.div$t.thresh/thresh90.div$trapAvg
+
+full.com.rich<-left_join(full.com,thresh90.rich,join_by("site"=="site"))
+full.com.div<-left_join(full.com,thresh90.div,join_by("site"=="site"))
+
+# Bring in field site data, join other data for easy plotting
+
+sites<-read.csv(paste0(datapath,"NEON_Field_Site_Metadata_20240926.csv"))
+domains<-data.frame(ID=c('D01',	'D02',	'D03',	'D04',	'D05',	'D06',	'D07',	'D08',	'D09',	'D10',	'D11',	'D12',	'D13',	'D14',	'D15',	'D16',	'D17',	'D18',	'D19',	'D20'),
+                    domainName=c('Northeast',	'Mid-Atlantic',	'Southeast',	'Atlantic Neotropical',	'Great Lakes',	'Prairie Peninsula',	'Central Plains',	'Ozarks Complex',	'Northern Plains',	'Southern Plains',	'Southern Rockies/Colorado Plateau',	'Desert Southwest',	'Pacific Southwest',	'Northern Rockies',	'Great Basin',	'Pacific Northwest',	'California',	'Tundra',	'Taiga',	'Pacific Tropical'))
+sites<-left_join(sites,domains,join_by("field_domain_id"=="ID"))
+inext<-left_join(inext,sites,join_by("site"=="field_site_id"))
+thresh90.rich<-left_join(thresh90.rich,sites,join_by("site"=="field_site_id"))
+thresh90.div<-left_join(thresh90.div,sites,join_by("site"=="field_site_id"))
+
+inext.rich<-left_join(inext.rich,thresh90.rich,join_by("site"=="site"))
+inext.div<-left_join(inext.div,thresh90.div,join_by("site"=="site"))
+
+inext.rich<-left_join(inext.rich,turnover,join_by("site"=="site"))
+inext.div<-left_join(inext.div,turnover,join_by("site"=="site"))
+
+# Find x and ylims
+xlim.rich<-ceiling(max(thresh90.rich$y.thresh))
+ylim.rich<-ceiling(max(full.com$Estimator.rich))
+xlim.div<-ceiling(max(thresh90.div$y.thresh))
+ylim.div<-ceiling(max(full.com$Estimator.div))
+
+
+
+# Save data
+write.csv(thresh90.rich,paste0(datapath,'richnessThresh.csv'),row.names=FALSE)
+write.csv(thresh90.div,paste0(datapath,'diversityThresh.csv'),row.names=FALSE)
 
