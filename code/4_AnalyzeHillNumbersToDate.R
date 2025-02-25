@@ -223,9 +223,11 @@ div.all <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$tur
   labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
   theme_minimal() +
   annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.1, vjust = 3, size = 6) +
-  scale_color_viridis_c(option = "D", name = "Est. diversity",limits = div_limits)
+  scale_color_viridis_c(option = "D", name = "Est. diversity",limits = div_limits) +
+  guides(size = "none") 
 
 combined.all <- rich.all / div.all + 
+  plot_layout(guides = "collect") & 
   theme(legend.position = "right")
 
 print(combined.all)
@@ -245,7 +247,7 @@ div.full <- ggplot(full, aes(x = turnover, y = prop.final.est.div, color = as.nu
   theme_minimal() +
   annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.2, vjust = 1, size = 6) +
   scale_color_viridis_c(option = "D", name = "Est. diversity", limits = div_limits) +
-  guides(size = "none")  # Suppresses the size legend
+  guides(size = "none") 
 
 combined.full <- rich.full / div.full + 
   plot_layout(guides = "collect") & 
@@ -340,7 +342,6 @@ divplot<-ggplot(full,aes(x=turnover, y=as.factor(signifText.div)))+
 
 combined_plot <- richplot/divplot
 combined_plot
-
 
 ### save the results file for stat analysis
 
