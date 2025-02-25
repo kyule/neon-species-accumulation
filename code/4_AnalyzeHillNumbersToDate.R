@@ -180,21 +180,24 @@ full<- full.com[which(full.com$year=="full"),]
 
 # Plot proportion by number of years
 
-rich.prop<-ggplot(full.com,aes(x=years,y=prop.final.est.rich,color=turnover))+
-          geom_point(size=3) +
-          theme_minimal() +
-          labs(x = "", y = "Observed/Estimated Richness") +
-          geom_smooth(color='black') +
-          scale_color_viridis_c(option = "D", name = "turnover")
+turnover_limits <- range(full.com$turnover, na.rm = TRUE)
 
-div.prop<-ggplot(full.com,aes(x=years,y=prop.final.est.div,color=turnover))+
-  geom_point(size=3) +
+rich.prop <- ggplot(full.com, aes(x = years, y = prop.final.est.rich, color = turnover)) +
+  geom_point(size = 3) +
+  theme_minimal() +
+  labs(x = "", y = "Observed/Estimated Richness") +
+  geom_smooth(color = 'black') +
+  scale_color_viridis_c(option = "D", name = "Turnover", limits = turnover_limits)
+
+div.prop <- ggplot(full.com, aes(x = years, y = prop.final.est.div, color = turnover)) +
+  geom_point(size = 3) +
   theme_minimal() +
   labs(x = "Years of sampling", y = "Observed/Estimated Diversity") +
-  geom_smooth(color='black')+
-  scale_color_viridis_c(option = "D", name = "turnover")
+  geom_smooth(color = 'black') +
+  scale_color_viridis_c(option = "D", name = "Turnover", limits = turnover_limits)
 
 combo <- rich.prop / div.prop + 
+  plot_layout(guides = "collect") & 
   theme(legend.position = "right")
 
 print(combo)
@@ -202,26 +205,54 @@ print(combo)
 
 # Plot the richness and turnover relationships
 
-rich <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),], aes(x = turnover, y = prop.final.est.rich, color = as.numeric(Estimator.rich))) +
+rich_limits <- range(full.com$final.est.rich, na.rm = TRUE)
+div_limits <- range(full.com$final.est.div, na.rm = TRUE)
+
+
+rich.all <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),], aes(x = turnover, y = prop.final.est.rich, color = as.numeric(Estimator.rich))) +
   geom_point(aes(size = years)) +
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
   labs(x = "", y = "Observed/Estimated Richness") +
   theme_minimal() +
   annotate("text", x = -Inf, y = Inf, label = "a", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
-  scale_color_viridis_c(option = "D", name = "Est. richness")
+  scale_color_viridis_c(option = "D", name = "Est. richness",limits = rich_limits)
 
-div <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),], aes(x = turnover, y = prop.final.est.div, color = as.numeric(Estimator.div))) +
+div.all <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),], aes(x = turnover, y = prop.final.est.div, color = as.numeric(Estimator.div))) +
   geom_point(aes(size = years)) +
   geom_smooth(method = "lm", color = "black") +
   labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
   theme_minimal() +
   annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.1, vjust = 3, size = 6) +
-  scale_color_viridis_c(option = "D", name = "Est. diversity")
+  scale_color_viridis_c(option = "D", name = "Est. diversity",limits = div_limits)
 
-combined <- rich / div + 
+combined.all <- rich.all / div.all + 
   theme(legend.position = "right")
 
-print(combined)
+print(combined.all)
+
+rich.full <- ggplot(full, aes(x = turnover, y = prop.final.est.rich, color = as.numeric(Estimator.rich))) +
+  geom_point(aes(size = years)) +
+  geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
+  labs(x = "", y = "Observed/Estimated Richness") +
+  theme_minimal() +
+  annotate("text", x = -Inf, y = Inf, label = "a", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
+  scale_color_viridis_c(option = "D", name = "Est. richness",limits = rich_limits)
+
+div.full <- ggplot(full, aes(x = turnover, y = prop.final.est.div, color = as.numeric(Estimator.div))) +
+  geom_point(aes(size = years)) +
+  geom_smooth(method = "lm", color = "black") +
+  labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
+  theme_minimal() +
+  annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.2, vjust = 1, size = 6) +
+  scale_color_viridis_c(option = "D", name = "Est. diversity", limits = div_limits) +
+  guides(size = "none")  # Suppresses the size legend
+
+combined.full <- rich.full / div.full + 
+  plot_layout(guides = "collect") & 
+  theme(legend.position = "right")
+
+print(combined.full)
+
 
 # Plot overlap in observed vs estimated Hill numbers
 

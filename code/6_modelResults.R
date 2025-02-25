@@ -99,7 +99,7 @@ summary(signif_model_div)
 
 #### Full data only analysis
 
-mod_dat<-full.com[which(full.com$year=="full"),] # fulld data only
+mod_dat<-full.com[which(full.com$year=="full"),] # full data only
 
 mod_dat$years<-scale(mod_dat$years,center=TRUE,scale=TRUE)
 mod_dat$fin.est.rich<-scale(mod_dat$final.est.rich,center=TRUE,scale=TRUE)
@@ -128,12 +128,28 @@ div<-lm(prop.final.est.div ~ turnover * fin.est.div * years,
 summary(div)
 stepCriterion(div)
 
-div.final<-glm(prop.final.est.div~ turnover,
+div.final<-lm(prop.final.est.div~ turnover,
                 data=mod_dat)
 summary(div.final)
 # negative relationship with turnover
 
-#### reaching thresholds
+### Turnover by overlap
+
+signif_model_rich<-glm(signif.rich~ turnover,
+                         data=mod_dat,
+                         family="binomial")
+summary(signif_model_rich)
+
+# prob of overlap decreases with turnover non-significantly
+
+signif_model_div<-glm(signif.div~ turnover,
+                        data=mod_dat,
+                        family="binomial")
+summary(signif_model_div)
+
+# prob of overlap decreases with turnover non-significantly
+
+#### Reaching 90% thresholds
 
 rich<-lm(y.thresh ~ turnover,
           data=rich.thresh)

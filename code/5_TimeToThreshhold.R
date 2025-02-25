@@ -111,9 +111,6 @@ thresh90.div<-left_join(thresh90.div,turnover,join_by("site"=="site"))
 inext.rich<-left_join(inext.rich,thresh90.rich,join_by("site"=="site"))
 inext.div<-left_join(inext.div,thresh90.div,join_by("site"=="site"))
 
-inext.rich<-left_join(inext.rich,turnover,join_by("site"=="site"))
-inext.div<-left_join(inext.div,turnover,join_by("site"=="site"))
-
 # Find x and ylims
 xlim.rich<-ceiling(max(thresh90.rich$y.thresh))
 ylim.rich<-ceiling(max(full.com$Estimator.rich))
@@ -146,41 +143,41 @@ ggplot(inext.div, aes(x = y, y = qD,group=site,color=as.numeric(turnover))) +
   scale_color_viridis_c(option = "D",name="Avg. turnover")
 
 
-# Basic histogram
-plotrich <- ggplot(thresh90.rich, aes(x = y.thresh)) +
-  geom_histogram(binwidth = 5, color = 'black') +
-  scale_y_continuous(limits = c(0, 20)) + 
-  labs(y="Number of sites")+
-  theme_minimal() +
-  theme(
-    axis.title.y = element_text(size = 18),
-    axis.text = element_text(size = 18),
-    axis.title.x = element_blank(),
-    legend.title = element_text(size = 18),
-    legend.text = element_text(size = 18)
-  )
+# Histogram colored by turnover
 
-plotdiv<-ggplot(thresh90.div, aes(x = y.thresh)) +
-  geom_histogram(binwidth = 1,color='black') +
-  #scale_y_continuous(limits = c(0, 20)) +
-  #scale_x_continuous(limits = c(0, 11)) +
-  theme_minimal() +
-  theme(
-    axis.title.x = element_blank(),
-    axis.text.x = element_text(size = 18),
-    axis.text.y = element_blank(),   
-    axis.title.y = element_blank(),
-    legend.title = element_text(size = 18), 
-    legend.text = element_text(size = 18)   
-  )
+bin_stats_rich <- thresh90.rich %>%
+  mutate(bin = cut(y.thresh, breaks = 12)) %>%  
+  group_by(bin) %>%
+  summarise(count = n(), avg_z = mean(turnover, na.rm = TRUE), .groups = "drop") %>%
+  mutate(bin_center = (as.numeric(sub("\\((.+),.*", "\\1", bin)) + 
+                         as.numeric(sub(".*,(.+)\\]", "\\1", bin))) / 2) 
 
-combined_plot <- plotrich + plotdiv + 
+bin_stats_div <- thresh90.div %>%
+  mutate(bin = cut(y.thresh, breaks = 12)) %>%  
+  group_by(bin) %>%
+  summarise(count = n(), avg_z = mean(turnover, na.rm = TRUE), .groups = "drop") %>%
+  mutate(bin_center = (as.numeric(sub("\\((.+),.*", "\\1", bin)) + 
+                         as.numeric(sub(".*,(.+)\\]", "\\1", bin))) / 2) 
+
+
+turnover_limits<-range(c(thresh90.rich$turnover,thresh90.div$turnover),na.rm=TRUE)
+
+rich_bin <- ggplot(bin_stats_rich, aes(x = bin_center, y = count, fill = avg_z)) +
+  geom_bar(stat = "identity", width = 4) +
+  scale_fill_viridis(option = "viridis", name = "Avg. turnover", limits = turnover_limits) +
+  labs(x = "", y = "Number of sites") +
+  theme_minimal()
+
+div_bin <- ggplot(bin_stats_div, aes(x = bin_center, y = count, fill = avg_z)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  scale_fill_viridis(option = "viridis", name = "Avg. turnover", limits = turnover_limits) +
+  labs(x = "Years to reach threshhold", y = "Number of sites") +
+  theme_minimal()
+
+combined_plot <- rich_bin / div_bin + 
   plot_layout(guides = "collect") + 
-  plot_annotation(
-    caption = "Years to reach threshold"  
-  ) & 
   theme(
-    plot.caption = element_text(size = 18, hjust = 0.5, vjust = 1)  # Center and adjust position of caption
+    plot.caption = element_text(size = 18, hjust = 0.5, vjust = 1) 
   )
 
 print(combined_plot)
