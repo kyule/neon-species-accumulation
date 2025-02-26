@@ -140,14 +140,14 @@ signif_model_rich<-glm(signif.rich~ turnover,
                          family="binomial")
 summary(signif_model_rich)
 
-# prob of overlap decreases with turnover non-significantly
+# no relationship with turnover
 
 signif_model_div<-glm(signif.div~ turnover,
                         data=mod_dat,
                         family="binomial")
 summary(signif_model_div)
 
-# prob of overlap decreases with turnover non-significantly
+# prob of overlap decreases with turnover marginally significant
 
 #### Reaching 90% thresholds
 
