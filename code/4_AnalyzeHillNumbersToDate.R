@@ -114,7 +114,7 @@ full.com$years[which(full.com$year=="full")]<-full.com$years[which(full.com$year
 
 # Define most complete estimators and associated proportions
 
-full.com$final.est.rich<-full.com$final.est.div<-full.com$prop.final.est.rich<-full.com$prop.final.est.div<-full.com$final.est.rich.se<-full.com$final.est.div.se<-full.com$final.obs.rich<-0
+full.com$final.est.rich<-full.com$final.est.div<-full.com$prop.final.est.rich<-full.com$prop.final.est.div<-full.com$final.est.rich.se<-full.com$final.est.div.se<-full.com$final.obs.rich<-full.com$final.obs.div<-0
 
 for (i in 1:nrow(full.com)){
   rich.est<-full.com$Estimator.rich[which(full.com$site==full.com$site[i] & full.com$year=="full")]
@@ -130,6 +130,7 @@ for (i in 1:nrow(full.com)){
   full.com$prop.final.est.div[i]<-full.com$Observed.div[i]/div.est
   
   full.com$final.obs.rich[i]<-full.com$Observed.rich[which(full.com$site==full.com$site[i] & full.com$year=="full")]
+  full.com$final.obs.div[i]<-full.com$Observed.div[which(full.com$site==full.com$site[i] & full.com$year=="full")]
   
   
 }
@@ -222,7 +223,7 @@ div.all <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$tur
   geom_smooth(method = "lm", color = "black") +
   labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
   theme_minimal() +
-  annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.1, vjust = 3, size = 6) +
+  annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
   scale_color_viridis_c(option = "D", name = "Est. diversity",limits = div_limits) +
   guides(size = "none") 
 

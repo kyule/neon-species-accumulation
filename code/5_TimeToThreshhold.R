@@ -19,6 +19,7 @@ library("dplyr")
 library("reshape")
 library("ggplot2")
 library("patchwork")
+library('viridis')
 
 # Load in the formatted clean data
 #Make sure the results are correctly configured
