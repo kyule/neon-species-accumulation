@@ -81,7 +81,6 @@ gt_table<-gt(fullcom.summary) %>%
 gtsave(gt_table, filename = "fullcom_table.png", path = datapath)
 
 
-
 # format data for full models
 
 mod_dat<-full.com[which(full.com$year!="full"),] # remove duplication of full data
@@ -103,7 +102,15 @@ rich<-glmer(prop.final.est.rich ~ turnover * fin.est.rich * years
             control = glmerControl(optimizer = "bobyqa"))
 summary(rich)
 
-# random effects explain no variance so they are removed
+rich.norand<-glmer(prop.final.est.rich ~ turnover * fin.est.rich * years
+            + (1|obs), # random effect of obs included to handle overdispersion, since quasibinomial is not possible in glmer
+            family='binomial',
+            data=mod_dat,
+            control = glmerControl(optimizer = "bobyqa"))
+summary(rich.norand)
+# random effects explain no variance so they are removed, lower AIC for less complicated model
+
+
 rich<-glm(prop.final.est.rich ~ turnover * fin.est.rich * years,
             family='quasibinomial',
             data=mod_dat)
@@ -115,7 +122,7 @@ rich.final<-glm(prop.final.est.rich ~ years + turnover + fin.est.rich + years:tu
           data=mod_dat)
 summary(rich.final)
 
-head(rich.final) %>% gt()
+
 
 
 # positive effect of the number of years, negative effect of turnover and estimated richness, positive effect of turnoverxyear
