@@ -108,7 +108,6 @@ rich.norand<-glmer(prop.final.est.rich ~ turnover * fin.est.rich * years
             data=mod_dat,
             control = glmerControl(optimizer = "bobyqa"))
 summary(rich.norand)
-# random effects explain no variance so they are removed, lower AIC for less complicated model
 
 
 rich<-glm(prop.final.est.rich ~ turnover * fin.est.rich * years,
@@ -123,11 +122,6 @@ rich.final<-glm(prop.final.est.rich ~ years + turnover + fin.est.rich + years:tu
 summary(rich.final)
 
 
-
-
-# positive effect of the number of years, negative effect of turnover and estimated richness, positive effect of turnoverxyear
-
-
 #### Diversity
 
 div <- lmer(prop.final.est.div ~turnover * fin.est.div * years
@@ -135,16 +129,25 @@ div <- lmer(prop.final.est.div ~turnover * fin.est.div * years
             data=mod_dat,
             control = lmerControl(optimizer = "bobyqa"))
 
-summary(div)
-step(div)
+div.sum<-summary(div)
 
-div.final <- lmer(prop.final.est.div ~turnover + fin.est.div + years + (1 | site) + turnover:years + fin.est.div:years,
-            data=mod_dat,
-            control = lmerControl(optimizer = "bobyqa"))
+div.norand <- lm(prop.final.est.div ~turnover * fin.est.div * years,
+            data=mod_dat)
 
+div.norand.sum<-summary(div.norand)
+logLik(div.norand)
+
+step(div.norand)
+
+div.final <- lm(prop.final.est.div ~ turnover + fin.est.div + years + 
+                  turnover:fin.est.div + turnover:years + fin.est.div:years,
+            data=mod_dat)
 summary(div.final)
 
-# negative effect of turnover, positive effect of years, marginally negative effect of div, positive effect of years * turnover and  estimated diversity x years
+div.null <- lm(prop.final.est.div ~ 1, data = mod_dat)
+div.null.dev <- deviance(div.null)
+print(div.null.dev)
+deviance(div.final)
 
 ### Turnover by overlap
 
@@ -185,8 +188,13 @@ stepCriterion(rich)
 rich.final<-glm(prop.final.est.rich~ fin.est.rich + years + turnover,
             family='quasibinomial',
             data=mod_dat)
-summary(rich.final)
-# Significant decrease with estimated richness, nonsignificant pos trend with years and neg with turnover
+rich.sum<-summary(rich.final)
+rich.sum
+rich.sum$null.deviance
+rich.sum$deviance
+rich.sum$df.residual
+pseudo_r2 <- 1 - (rich.sum$deviance / rich.sum$null.deviance)
+pseudo_r2
 
 
 # Diversity
@@ -199,7 +207,12 @@ stepCriterion(div)
 div.final<-lm(prop.final.est.div~ turnover,
                 data=mod_dat)
 summary(div.final)
-# negative relationship with turnover
+
+div.null <- lm(prop.final.est.div ~ 1, data = mod_dat)
+div.null.dev <- deviance(div.null)
+print(div.null.dev)
+deviance(div.final)
+
 
 ### Turnover by overlap
 
@@ -219,13 +232,9 @@ summary(signif_model_div)
 
 #### Reaching 90% thresholds
 
-rich<-lm(y.thresh ~ turnover,
-          data=rich.thresh)
-summary(rich)
-# no relationship between turnover and number of years
+cor.test(rich.thresh$y.thresh,rich.thresh$turnover)
 
-div<-lm(y.thresh ~ turnover,
-         data=div.thresh)
-summary(div)
+cor.test(div.thresh$y.thresh,div.thresh$turnover)
+
 # number of years increases with turnover
 
