@@ -212,6 +212,7 @@ div_limits <- range(full.com$final.est.div, na.rm = TRUE)
 
 rich.all <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),], aes(x = turnover, y = prop.final.est.rich, color = as.numeric(Estimator.rich))) +
   geom_point(aes(size = years)) +
+  scale_size_continuous(range = c(1, 3)) +
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
   labs(x = "", y = "Observed/Estimated Richness") +
   theme_minimal() +
@@ -220,6 +221,7 @@ rich.all <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$tu
 
 div.all <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),], aes(x = turnover, y = prop.final.est.div, color = as.numeric(Estimator.div))) +
   geom_point(aes(size = years)) +
+  scale_size_continuous(range = c(1, 3)) +
   geom_smooth(method = "lm", color = "black") +
   labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
   theme_minimal() +
