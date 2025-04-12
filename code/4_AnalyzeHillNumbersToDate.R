@@ -179,29 +179,7 @@ for (i in 1:nrow(full)){
 full.com<-full.com[which(full.com$site!="GUAN"),]
 full<- full.com[which(full.com$year=="full"),]
 
-# Plot proportion by number of years
 
-turnover_limits <- range(full.com$turnover, na.rm = TRUE)
-
-rich.prop <- ggplot(full.com, aes(x = years, y = prop.final.est.rich, color = turnover)) +
-  geom_point(size = 3) +
-  theme_minimal() +
-  labs(x = "", y = "Observed/Estimated Richness") +
-  geom_smooth(color = 'black') +
-  scale_color_viridis_c(option = "D", name = "Turnover", limits = turnover_limits)
-
-div.prop <- ggplot(full.com, aes(x = years, y = prop.final.est.div, color = turnover)) +
-  geom_point(size = 3) +
-  theme_minimal() +
-  labs(x = "Years of sampling", y = "Observed/Estimated Diversity") +
-  geom_smooth(color = 'black') +
-  scale_color_viridis_c(option = "D", name = "Turnover", limits = turnover_limits)
-
-combo <- rich.prop / div.prop + 
-  plot_layout(guides = "collect") & 
-  theme(legend.position = "right")
-
-print(combo)
 
 
 # Plot the richness and turnover relationships
@@ -216,7 +194,7 @@ rich.all <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$tu
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
   labs(x = "", y = "Observed/Estimated Richness") +
   theme_minimal() +
-  annotate("text", x = -Inf, y = Inf, label = "a", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
+  #annotate("text", x = -Inf, y = Inf, label = "a", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
   scale_color_viridis_c(option = "D", name = "Est. richness",limits = rich_limits)
 
 div.all <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),], aes(x = turnover, y = prop.final.est.div, color = as.numeric(Estimator.div))) +
@@ -225,7 +203,7 @@ div.all <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$tur
   geom_smooth(method = "lm", color = "black") +
   labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
   theme_minimal() +
-  annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
+  #annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
   scale_color_viridis_c(option = "D", name = "Est. diversity",limits = div_limits) +
   guides(size = "none") 
 
@@ -236,72 +214,102 @@ combined.all <- rich.all / div.all +
 print(combined.all)
 
 
+# Set shared color limits
+turnover_limits <- range(c(full$turnover, full.com$turnover), na.rm = TRUE)
 
-# Plot overlap in observed vs estimated Hill numbers
-
+# Plot 1: Richness
 rich.plot <- 
-  ggplot(full, 
-         aes(x = obsRank, y = Observed.rich)) +
-  geom_rect(aes(xmin = obsRank - 0.5, 
-                xmax = obsRank + 0.5, 
-                ymin = -Inf, 
-                ymax = Inf, alpha = signif.rich),
+  ggplot(full, aes(x = obsRank, y = Observed.rich)) +
+  geom_rect(aes(xmin = obsRank - 0.5, xmax = obsRank + 0.5, ymin = -Inf, ymax = Inf, alpha = signif.rich),
             fill = "grey") +
   geom_errorbar(aes(ymin = Estimator.rich - Est_s.e..rich, 
                     ymax = Estimator.rich + Est_s.e..rich, 
                     color = turnover), width = 0, size = 2) + 
   geom_point(color = "black", size = 2) + 
   labs(x = "", y = "Richness") +
-  annotate("text", x = -Inf, y = Inf, label = "a", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
   theme_bw() + 
-  scale_color_viridis_c(option = "D", name = "turnover") +
+  scale_color_viridis_c(option = "D", name = "Mean Turnover", limits = turnover_limits) +
   scale_alpha(range = c(0, 0.5), guide = "none") +
   theme(
-    axis.title.y = element_text(size = 16),  
-    axis.text.y = element_text(size = 14),   
-    axis.title.x = element_blank(),  
-    axis.text.x = element_blank(),  
-    legend.position = "none",
+    axis.title = element_text(size = 12),  
+    axis.text = element_text(size = 12),
+    legend.position = c(1, 1),
+    legend.justification = c(1, 1),
+    legend.background = element_rect(fill = NA, color = NA),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 12),
     plot.margin = unit(c(0, 0, 0, 0), "cm"),
     panel.spacing = unit(0, "cm")
   )
 
+
+# Plot 2: Diversity
 div.plot <- 
-  ggplot(full, 
-         aes(x = obsRank, y = Observed.div)) +
-  geom_rect(aes(xmin = obsRank - 0.5, 
-                xmax = obsRank + 0.5, 
-                ymin = -Inf, 
-                ymax = Inf, alpha = signif.div),
+  ggplot(full, aes(x = obsRank, y = Observed.div)) +
+  geom_rect(aes(xmin = obsRank - 0.5, xmax = obsRank + 0.5, ymin = -Inf, ymax = Inf, alpha = signif.div),
             fill = "grey") +
   geom_errorbar(aes(ymin = Estimator.div - Est_s.e..div, 
                     ymax = Estimator.div + Est_s.e..div, 
                     color = turnover), width = 0, size = 2) + 
   geom_point(color = "black", size = 2) + 
   labs(x = "Rank-order Observed Richness", y = "Diversity") +
-  annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
   theme_bw() + 
-  scale_color_viridis_c(option = "D", name = "turnover") +
+  scale_color_viridis_c(option = "D", name = "Turnover", limits = turnover_limits) +
   scale_alpha(range = c(0, 0.5), guide = "none") +
   theme(
-    axis.title = element_text(size = 16),  
-    axis.text = element_text(size = 14),
-    legend.position = c(1, 1),  # Adjusted to move inside the plot
-    legend.justification = c(1, 1), # Anchor the legend to the top right
-    legend.background = element_rect(fill = NA, color = NA),
-    legend.title = element_text(size = 14),
-    legend.text = element_text(size = 12),
+    axis.title.y = element_text(size = 12),  
+    axis.text.y = element_text(size = 12),   
+    axis.title.x = element_text(size = 12),  
+    axis.text.x = element_text(size = 12),  
+    legend.position = "none",
     plot.margin = unit(c(0, 0, 0, 0), "cm"),
     panel.spacing = unit(0, "cm")
   )
 
-plot_grid(rich.plot, div.plot, ncol = 1, align = 'v', axis = 'tb')
+# Combine first pair
+hill_combo <- plot_grid(rich.plot, div.plot, ncol = 1, align = 'v', axis = 'tb')
+
+# Plot 3: Richness Proportion
+rich.prop <- ggplot(full.com, aes(x = years, y = prop.final.est.rich, color = turnover)) +
+  geom_point(size = 3) +
+  theme_minimal() +
+  labs(x = "", y = "Observed/Estimated Richness") +
+  geom_smooth(color = 'black') +
+  theme(legend.position = "none") +
+  theme(
+    axis.title = element_text(size = 12),  
+    axis.text = element_text(size = 12),
+    legend.position = "none",
+    plot.margin = unit(c(0, 0, 0, 0), "cm"),
+    panel.spacing = unit(0, "cm")
+  ) +
+  scale_color_viridis_c(option = "D", name = "Turnover", limits = turnover_limits)
+
+# Plot 4: Diversity Proportion
+div.prop <- ggplot(full.com, aes(x = years, y = prop.final.est.div, color = turnover)) +
+  geom_point(size = 3) +
+  theme_minimal() +
+  labs(x = "Years of sampling", y = "Observed/Estimated Diversity") +
+  geom_smooth(color = 'black') +
+  theme(legend.position = "none") +
+  theme(
+    axis.title.y = element_text(size = 12),  
+    axis.text.y = element_text(size = 12),   
+    axis.title.x = element_text(size = 12),  
+    axis.text.x = element_text(size = 12),  
+    legend.position = "none",
+    plot.margin = unit(c(0, 0, 0, 0), "cm"),
+    panel.spacing = unit(0, "cm")
+  ) +
+  scale_color_viridis_c(option = "D", name = "Turnover", limits = turnover_limits)
+
+prop_combo <- plot_grid(rich.prop, div.prop, ncol = 1, align = 'v', axis = 'lr', rel_heights = c(1, 1))
 
 
-### save the results file for stat analysis
-
-write.csv(full.com,paste0(datapath,'communityResults.csv'),row.names=FALSE)
-
-
+final_combo <- plot_grid(hill_combo, plot_spacer()+ theme_void(), prop_combo, 
+                         ncol = 3, 
+                         rel_widths = c(1, 0.08, 0.7), 
+                         align = 'h')
+final_combo
 
 

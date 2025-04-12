@@ -134,14 +134,16 @@ turnover_limits<-range(c(thresh90.rich$turnover,thresh90.div$turnover),na.rm=TRU
 
 rich_bin <- ggplot(bin_stats_rich, aes(x = bin_center, y = count, fill = avg_z)) +
   geom_bar(stat = "identity", width = 4) +
-  scale_fill_viridis(option = "viridis", name = "Avg. turnover", limits = turnover_limits) +
+  scale_fill_viridis(option = "viridis", name = "Mean turnover", limits = turnover_limits) +
   labs(x = "", y = "Number of sites") +
+  #annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
   theme_minimal()
 
 div_bin <- ggplot(bin_stats_div, aes(x = bin_center, y = count, fill = avg_z)) +
   geom_bar(stat = "identity", width = 0.5) +
-  scale_fill_viridis(option = "viridis", name = "Avg. turnover", limits = turnover_limits) +
+  scale_fill_viridis(option = "viridis", name =  "Mean turnover", limits = turnover_limits) +
   labs(x = "Years to reach threshhold", y = "Number of sites") +
+  #annotate("text", x = -Inf, y = Inf, label = "d", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
   theme_minimal()
 
 combined_plot <- rich_bin / div_bin + 
@@ -158,8 +160,6 @@ summary(rich.thresh$y.thresh)
 sd(rich.thresh$y.thresh)/sqrt(nrow(rich.thresh))
 summary(div.thresh$y.thresh)
 sd(div.thresh$y.thresh)/sqrt(nrow(div.thresh))
-
-
 
 cor.test(rich.thresh$y.thresh,rich.thresh$turnover)
 cor.test(div.thresh$y.thresh,div.thresh$turnover)

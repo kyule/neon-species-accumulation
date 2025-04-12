@@ -79,6 +79,7 @@ div.norand <- lm(prop.final.est.div ~turnover * fin.est.div * years,
             data=mod_dat)
 
 div.norand.sum<-summary(div.norand)
+logLik(div)
 logLik(div.norand)
 
 step(div.norand)
