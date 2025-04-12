@@ -112,37 +112,6 @@ thresh90.div<-left_join(thresh90.div,turnover,join_by("site"=="site"))
 inext.rich<-left_join(inext.rich,thresh90.rich,join_by("site"=="site"))
 inext.div<-left_join(inext.div,thresh90.div,join_by("site"=="site"))
 
-# Find x and ylims
-xlim.rich<-ceiling(max(thresh90.rich$y.thresh))
-ylim.rich<-ceiling(max(full.com$Estimator.rich))
-xlim.div<-ceiling(max(thresh90.div$y.thresh))
-ylim.div<-ceiling(max(full.com$Estimator.div))
-
-#Plot the accumulation curves and estimated number of years
-ggplot(inext.rich, aes(x = y, y = qD,group=site,color=as.numeric(turnover))) +
-  geom_line(size=1) +
-  facet_wrap(~ domainName) +
-  labs(x = "Years", y = "Estimated Richness") +
-  theme_minimal() +
-  geom_hline(data = thresh90.rich, aes(yintercept = thresh), linetype = "dashed") +
-  geom_point(data = thresh90.rich, aes(x = y.thresh, y = thresh), color = "darkgrey", size = 2) +
-  geom_point(data = inext.rich[which(inext.rich$Method=="Observed"),],aes(x= y, y=qD),color="black", size = 2) +
-  ylim(0,ylim.rich) +
-  xlim(0,xlim.rich) +
-  scale_color_viridis_c(option = "D",name="Avg. turnover")
-
-ggplot(inext.div, aes(x = y, y = qD,group=site,color=as.numeric(turnover))) +
-  geom_line(size=1) +
-  facet_wrap(~ domainName) +
-  labs(x = "Years", y = "Estimated Diversity") +
-  theme_minimal() +
-  geom_hline(data = thresh90.div, aes(yintercept = thresh), linetype = "dashed") +
-  geom_point(data = thresh90.div, aes(x = y.thresh, y = thresh), color = "darkgrey", size = 2) +
-  geom_point(data = inext.div[which(inext.div$Method=="Observed"),],aes(x= y, y=qD),color="black", size = 2) +
-  ylim(0,ylim.div) +
-  xlim(0,xlim.div) +
-  scale_color_viridis_c(option = "D",name="Avg. turnover")
-
 
 # Histogram colored by turnover
 

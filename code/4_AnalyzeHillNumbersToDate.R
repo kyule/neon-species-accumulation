@@ -320,58 +320,6 @@ div.plot <-
 plot_grid(rich.plot, div.plot, ncol = 1, align = 'v', axis = 'tb')
 
 
-# Violin plots of turnover vs. overlap with estimator +/- se: full data only
-
-
-richplot<-ggplot(full,aes(x=turnover, y=as.factor(signifText.rich)))+
-  labs(y = "Richness", x = "Mean Species Turnover") +
-  geom_violin() + stat_summary(
-    fun = "mean", geom = "point", shape = 20, size = 3, color = "black")+
-  theme_minimal()   + theme(
-    axis.title.x = element_blank(), 
-    axis.text.x = element_blank(),    
-    axis.title.y = element_text(size = 18),  
-    axis.text.y = element_text(size = 16)     
-  )
-
-divplot<-ggplot(full,aes(x=turnover, y=as.factor(signifText.div)))+
-  labs(y = "Diversity", x = "Mean Species Turnover") +
-  geom_violin() + stat_summary(
-    fun = "mean", geom = "point", shape = 20, size = 3, color = "black")+
-  theme_minimal()   + theme(
-    axis.title = element_text(size = 18),  
-    axis.text = element_text(size = 16)  
-  )
-
-combined_plot <- richplot/divplot
-combined_plot
-
-# Violin plots of turnover vs. overlap with estimator +/- se: all data only
-
-
-richplot<-ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),],aes(x=turnover, y=as.factor(signifText.rich)))+
-  labs(y = "Richness", x = "Mean Species Turnover") +
-  geom_violin() + stat_summary(
-    fun = "mean", geom = "point", shape = 20, size = 3, color = "black")+
-  theme_minimal()   + theme(
-    axis.title.x = element_blank(), 
-    axis.text.x = element_blank(),    
-    axis.title.y = element_text(size = 18),  
-    axis.text.y = element_text(size = 16)     
-  )
-
-divplot<-ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),],aes(x=turnover, y=as.factor(signifText.div)))+
-  labs(y = "Diversity", x = "Mean Species Turnover") +
-  geom_violin() + stat_summary(
-    fun = "mean", geom = "point", shape = 20, size = 3, color = "black")+
-  theme_minimal()   + theme(
-    axis.title = element_text(size = 18),  
-    axis.text = element_text(size = 16)  
-  )
-
-combined_plot <- richplot/divplot
-combined_plot
-
 ### save the results file for stat analysis
 
 write.csv(full.com,paste0(datapath,'communityResults.csv'),row.names=FALSE)
