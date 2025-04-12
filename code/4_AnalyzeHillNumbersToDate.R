@@ -308,7 +308,7 @@ prop_combo <- plot_grid(rich.prop, div.prop, ncol = 1, align = 'v', axis = 'lr',
 
 final_combo <- plot_grid(hill_combo, plot_spacer()+ theme_void(), prop_combo, 
                          ncol = 3, 
-                         rel_widths = c(1, 0.08, 0.7), 
+                         rel_widths = c(1, 0.05, 0.6), 
                          align = 'h')
 final_combo
 
