@@ -22,6 +22,32 @@ library('gtsummary')
 library("patchwork")
 library('viridis')
 
+## Plot proportion observed as a function of turnover: full data only
+
+
+rich.full <- ggplot(full.com[which(full.com$year == "full"),], aes(x = turnover, y = prop.final.est.rich, color = as.numeric(Estimator.rich))) +
+  geom_point(aes(size = years)) +
+  geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
+  labs(x = "", y = "Observed/Estimated Richness") +
+  theme_minimal() +
+  annotate("text", x = -Inf, y = Inf, label = "a", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
+  scale_color_viridis_c(option = "D", name = "Est. richness",limits = rich_limits)
+
+div.full <- ggplot(full.com[which(full.com$year == "full"),], aes(x = turnover, y = prop.final.est.div, color = as.numeric(Estimator.div))) +
+  geom_point(aes(size = years)) +
+  geom_smooth(method = "lm", color = "black") +
+  labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
+  theme_minimal() +
+  annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.2, vjust = 1, size = 6) +
+  scale_color_viridis_c(option = "D", name = "Est. diversity", limits = div_limits) +
+  guides(size = "none") 
+
+combined.full <- rich.full / div.full + 
+  plot_layout(guides = "collect") & 
+  theme(legend.position = "right")
+
+print(combined.full)
+
 
 # Load in the formatted clean data
 # Make sure the results are correctly configured

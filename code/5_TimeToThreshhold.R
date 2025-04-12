@@ -152,6 +152,18 @@ combined_plot <- rich_bin / div_bin +
 
 print(combined_plot)
 
+# correlation with turnover
+
+summary(rich.thresh$y.thresh)
+sd(rich.thresh$y.thresh)/sqrt(nrow(rich.thresh))
+summary(div.thresh$y.thresh)
+sd(div.thresh$y.thresh)/sqrt(nrow(div.thresh))
+
+
+
+cor.test(rich.thresh$y.thresh,rich.thresh$turnover)
+cor.test(div.thresh$y.thresh,div.thresh$turnover)
+
 # save threshold results
 
 write.csv(thresh90.rich,paste0(datapath,'richnessThresh.csv'),row.names=FALSE)
