@@ -156,13 +156,13 @@ print(combined_plot)
 
 # correlation with turnover
 
-summary(rich.thresh$y.thresh)
-sd(rich.thresh$y.thresh)/sqrt(nrow(rich.thresh))
-summary(div.thresh$y.thresh)
-sd(div.thresh$y.thresh)/sqrt(nrow(div.thresh))
+summary(thresh90.rich$y.thresh)
+sd(thresh90.rich$y.thresh)/sqrt(nrow(thresh90.rich))
+summary(thresh90.div$y.thresh)
+sd(thresh90.div$y.thresh)/sqrt(nrow(thresh90.div))
 
-cor.test(rich.thresh$y.thresh,rich.thresh$turnover)
-cor.test(div.thresh$y.thresh,div.thresh$turnover)
+cor.test(as.numeric(thresh90.rich$y.thresh),as.numeric(thresh90.rich$turnover))
+cor.test(as.numeric(thresh90.div$y.thresh),as.numeric(thresh90.div$turnover))
 
 # save threshold results
 
