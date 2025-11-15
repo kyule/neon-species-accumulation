@@ -19,6 +19,7 @@ library("glmtoolbox")
 library('lmerTest')
 library('gt')
 library('gtsummary')
+library('MuMIn')
 
 # Load in the formatted clean data
 # Make sure the results are correctly configured
@@ -39,12 +40,11 @@ mod_dat$obs<-1:nrow(mod_dat)
 
 #### Richness
 
-rich<-glmer(prop.final.est.rich ~ turnover * fin.est.rich * years
-            + (1|site) + (1|obs), # random effect of obs included to handle overdispersion, since quasibinomial is not possible in glmer
-            family='binomial',
+rich.rand<-glmer(prop.final.est.rich ~ turnover * fin.est.rich * years
+            + (1|site), # random effect of obs included to handle overdispersion, since quasibinomial is not possible in glmer
             data=mod_dat,
             control = glmerControl(optimizer = "bobyqa"))
-summary(rich)
+summary(rich.rand)
 
 rich.norand<-glmer(prop.final.est.rich ~ turnover * fin.est.rich * years
             + (1|obs), # random effect of obs included to handle overdispersion, since quasibinomial is not possible in glmer
@@ -53,17 +53,10 @@ rich.norand<-glmer(prop.final.est.rich ~ turnover * fin.est.rich * years
             control = glmerControl(optimizer = "bobyqa"))
 summary(rich.norand)
 
-
-rich<-glm(prop.final.est.rich ~ turnover * fin.est.rich * years,
+rich.quasi<-glm(prop.final.est.rich ~ turnover * fin.est.rich * years,
             family='quasibinomial',
             data=mod_dat)
-summary(rich)
-stepCriterion(rich)
-
-rich.final<-glm(prop.final.est.rich ~ years + turnover + fin.est.rich + years:turnover,
-          family='quasibinomial',
-          data=mod_dat)
-summary(rich.final)
+summary(rich.quasi)
 
 
 #### Diversity
@@ -73,26 +66,14 @@ div <- lmer(prop.final.est.div ~turnover * fin.est.div * years
             data=mod_dat,
             control = lmerControl(optimizer = "bobyqa"))
 
-div.sum<-summary(div)
-
 div.norand <- lm(prop.final.est.div ~turnover * fin.est.div * years,
             data=mod_dat)
 
-div.norand.sum<-summary(div.norand)
 logLik(div)
 logLik(div.norand)
 
-step(div.norand)
-
-div.final <- lm(prop.final.est.div ~ turnover + fin.est.div + years + 
-                  turnover:fin.est.div + turnover:years + fin.est.div:years,
-            data=mod_dat)
-summary(div.final)
-
-div.null <- lm(prop.final.est.div ~ 1, data = mod_dat)
-div.null.dev <- deviance(div.null)
-print(div.null.dev)
-deviance(div.final)
+summary(div)
+r.squaredGLMM(div)
 
 
 
