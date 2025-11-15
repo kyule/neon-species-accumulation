@@ -119,7 +119,11 @@ sd(thresh90$y.thresh)/sqrt(nrow(thresh90))
 cor.test(as.numeric(thresh90$y.thresh),as.numeric(thresh90$turnover))
 
 
+##
+div<-read.csv(paste0(datapath,'communityResults.csv'))
 
+correlate<-left_join(full.com,div,join_by("site"=="site","year"=="year"))
+cor(correlate$Observed.div,correlate$Observed)
 
 
 

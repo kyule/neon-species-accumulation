@@ -215,7 +215,11 @@ sim.prop <- ggplot(full.com, aes(x = years, y = prop.final.est, color = turnover
   theme(
     axis.title = element_text(size = 12),  
     axis.text = element_text(size = 12),
-    legend.position = "none",
+    legend.position = c(1, 1),
+    legend.justification = c(1, 1),
+    legend.background = element_rect(fill = NA, color = NA),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 12),
     plot.margin = unit(c(0, 0, 0, 0), "cm"),
     panel.spacing = unit(0, "cm")
   ) +
