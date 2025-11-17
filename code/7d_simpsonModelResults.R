@@ -57,6 +57,7 @@ logLik(div.norand)
 summary(div)
 r.squaredGLMM(div)
 
-
+### 
+load(file=paste0(datapath,"iNEXTandTurnoverResults_withSimpson.Robj"))
 
 

@@ -136,23 +136,42 @@ rich_bin <- ggplot(bin_stats_rich, aes(x = bin_center, y = count, fill = avg_z))
   geom_bar(stat = "identity", width = 4) +
   scale_fill_viridis(option = "viridis", name = "Mean turnover", limits = turnover_limits) +
   labs(x = "", y = "Number of sites") +
-  #annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
-  theme_minimal()
+  annotate("text", x = 3, y = 15, label = "c)", fontface = "bold") +
+  theme_minimal()+
+  theme(legend.position = c(1, 1),
+    legend.justification = c(1, 1),
+    legend.background = element_rect(fill = NA, color = NA),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 10))
 
 div_bin <- ggplot(bin_stats_div, aes(x = bin_center, y = count, fill = avg_z)) +
   geom_bar(stat = "identity", width = 0.5) +
   scale_fill_viridis(option = "viridis", name =  "Mean turnover", limits = turnover_limits) +
   labs(x = "Years to reach threshhold", y = "Number of sites") +
-  #annotate("text", x = -Inf, y = Inf, label = "d", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
-  theme_minimal()
+  annotate("text", x = 0.3, y = 20, label = "d)", fontface = "bold") +
+  theme_minimal()+
+  theme(legend.position = c(1, 1),
+        legend.justification = c(1, 1),
+        legend.background = element_rect(fill = NA, color = NA),
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 10))
 
 combined_plot <- rich_bin / div_bin + 
-  plot_layout(guides = "collect") + 
   theme(
     plot.caption = element_text(size = 18, hjust = 0.5, vjust = 1) 
   )
 
 print(combined_plot)
+
+# combined plot for figure 2 if 'combined.all' from 4b_AnalyzeHillNumbersToDate.R is loaded
+
+fullplot <- combined.all | combined_plot
+
+print(fullplot)
+
+tiff(paste0(datapath,"figure2.tiff"), units="px", width=1961, height=1961, res=300)
+fullplot
+dev.off()
 
 # correlation with turnover
 

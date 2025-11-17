@@ -187,28 +187,49 @@ full<- full.com[which(full.com$year=="full"),]
 rich_limits <- range(full.com$final.est.rich, na.rm = TRUE)
 div_limits <- range(full.com$final.est.div, na.rm = TRUE)
 
-
-rich.all <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),], aes(x = turnover, y = prop.final.est.rich, color = as.numeric(Estimator.rich))) +
+rich.all <- ggplot(
+  full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),],
+  aes(x = turnover, y = prop.final.est.rich, color = as.numeric(Estimator.rich))
+) +
+  scale_color_viridis_c(
+    option = "D",
+    name = "Est. richness",
+    limits = rich_limits,
+    guide = guide_colorbar(order = 1)   # <-- puts this legend first (on top)
+  ) +
   geom_point(aes(size = years)) +
-  scale_size_continuous(range = c(1, 3)) +
+  scale_size_continuous(
+    range = c(1, 3),
+    guide = guide_legend(order = 2)      # <-- puts size legend below
+  ) +
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
-  labs(x = "", y = "Observed/Estimated Richness") +
+  labs(x = "", y = "(Obs. Richness)/(Est. Richness)") +
   theme_minimal() +
-  #annotate("text", x = -Inf, y = Inf, label = "a", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
-  scale_color_viridis_c(option = "D", name = "Est. richness",limits = rich_limits)
+  annotate("text", x = 0.22, y = 1, label = "a)", fontface = "bold")
 
-div.all <- ggplot(full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),], aes(x = turnover, y = prop.final.est.div, color = as.numeric(Estimator.div))) +
+
+div.all <- ggplot(
+  full.com[which((full.com$year != "full") & !is.na(full.com$turnover)),],
+  aes(x = turnover, y = prop.final.est.div, color = as.numeric(Estimator.div))
+) +
   geom_point(aes(size = years)) +
-  scale_size_continuous(range = c(1, 3)) +
+  scale_size_continuous(
+    range = c(1, 3),
+    guide = guide_legend(order = 2)   # only matters if you later show it
+  ) +
   geom_smooth(method = "lm", color = "black") +
-  labs(x = "Mean Species Turnover", y = "Observed/Estimated Diversity") +
+  labs(x = "Mean Species Turnover", y = "(Obs. Diversity)/(Est. Diversity)") +
   theme_minimal() +
-  #annotate("text", x = -Inf, y = Inf, label = "b", fontface = "bold", hjust = -0.2, vjust = 1.3, size = 6) +
-  scale_color_viridis_c(option = "D", name = "Est. diversity",limits = div_limits) +
-  guides(size = "none") 
+  annotate("text", x = 0.22, y = 1.15, label = "b)", fontface = "bold") +
+  scale_color_viridis_c(
+    option = "D",
+    name = "Est. diversity",
+    limits = div_limits,
+    guide = guide_colorbar(order = 1)  # <-- puts color scale bar first
+  ) 
+
 
 combined.all <- rich.all / div.all + 
-  plot_layout(guides = "collect") & 
   theme(legend.position = "right")
 
 print(combined.all)
@@ -227,17 +248,19 @@ rich.plot <-
                     color = turnover), width = 0, size = 2) + 
   geom_point(color = "black", size = 2) + 
   labs(x = "", y = "Richness") +
+  annotate("text", x = 0, y = 300, label = "a)", size = 5, fontface = "bold") +
   theme_bw() + 
   scale_color_viridis_c(option = "D", name = "Mean Turnover", limits = turnover_limits) +
   scale_alpha(range = c(0, 0.5), guide = "none") +
   theme(
-    axis.title = element_text(size = 12),  
-    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 10),  
+    axis.text = element_text(size = 10),
     legend.position = c(1, 1),
     legend.justification = c(1, 1),
     legend.background = element_rect(fill = NA, color = NA),
-    legend.title = element_text(size = 12),
-    legend.text = element_text(size = 12),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 10),
+    subtitle ='a',
     plot.margin = unit(c(0, 0, 0, 0), "cm"),
     panel.spacing = unit(0, "cm")
   )
@@ -253,14 +276,15 @@ div.plot <-
                     color = turnover), width = 0, size = 2) + 
   geom_point(color = "black", size = 2) + 
   labs(x = "Rank-order Observed Richness", y = "Diversity") +
+  annotate("text", x = 0, y = 40, label = "b)", size = 5, fontface = "bold") +
   theme_bw() + 
   scale_color_viridis_c(option = "D", name = "Turnover", limits = turnover_limits) +
   scale_alpha(range = c(0, 0.5), guide = "none") +
   theme(
-    axis.title.y = element_text(size = 12),  
-    axis.text.y = element_text(size = 12),   
-    axis.title.x = element_text(size = 12),  
-    axis.text.x = element_text(size = 12),  
+    axis.title.y = element_text(size = 10),  
+    axis.text.y = element_text(size = 10),   
+    axis.title.x = element_text(size = 10),  
+    axis.text.x = element_text(size = 10),  
     legend.position = "none",
     plot.margin = unit(c(0, 0, 0, 0), "cm"),
     panel.spacing = unit(0, "cm")
@@ -272,13 +296,15 @@ hill_combo <- plot_grid(rich.plot, div.plot, ncol = 1, align = 'v', axis = 'tb')
 # Plot 3: Richness Proportion
 rich.prop <- ggplot(full.com, aes(x = years, y = prop.final.est.rich, color = turnover)) +
   geom_point(size = 3) +
+  scale_x_continuous(breaks = c(2, 4,6, 8))+
   theme_minimal() +
-  labs(x = "", y = "Observed/Estimated Richness") +
+  labs(x = "", y = "(Obs. Richness)/(Est. Richness)") +
   geom_smooth(color = 'black') +
+  annotate("text", x = 1, y = 1, label = "c)", size = 5, fontface = "bold") +
   theme(legend.position = "none") +
   theme(
-    axis.title = element_text(size = 12),  
-    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 10),  
+    axis.text = element_text(size = 10),
     legend.position = "none",
     plot.margin = unit(c(0, 0, 0, 0), "cm"),
     panel.spacing = unit(0, "cm")
@@ -288,15 +314,17 @@ rich.prop <- ggplot(full.com, aes(x = years, y = prop.final.est.rich, color = tu
 # Plot 4: Diversity Proportion
 div.prop <- ggplot(full.com, aes(x = years, y = prop.final.est.div, color = turnover)) +
   geom_point(size = 3) +
+  scale_x_continuous(breaks = c(2, 4,6, 8))+
   theme_minimal() +
-  labs(x = "Years of sampling", y = "Observed/Estimated Diversity") +
+  labs(x = "Years of sampling", y = "(Obs. Diversity)/(Est. Diversity)") +
+  annotate("text", x = 1, y = 1.35, label = "d)", size = 5, fontface = "bold") +
   geom_smooth(color = 'black') +
   theme(legend.position = "none") +
   theme(
-    axis.title.y = element_text(size = 12),  
-    axis.text.y = element_text(size = 12),   
-    axis.title.x = element_text(size = 12),  
-    axis.text.x = element_text(size = 12),  
+    axis.title.y = element_text(size = 10),  
+    axis.text.y = element_text(size = 10),   
+    axis.title.x = element_text(size = 10),  
+    axis.text.x = element_text(size = 10),  
     legend.position = "none",
     plot.margin = unit(c(0, 0, 0, 0), "cm"),
     panel.spacing = unit(0, "cm")
@@ -310,6 +338,7 @@ final_combo <- plot_grid(hill_combo, plot_spacer()+ theme_void(), prop_combo,
                          ncol = 3, 
                          rel_widths = c(1, 0.05, 0.6), 
                          align = 'h')
+tiff(paste0(datapath,"figure1.tiff"), units="px", width=1961, height=1700, res=300)
 final_combo
-
+dev.off()
 
