@@ -193,7 +193,7 @@ rich.all <- ggplot(
 ) +
   scale_color_viridis_c(
     option = "D",
-    name = "Est. richness",
+    name = "Estimated richness",
     limits = rich_limits,
     guide = guide_colorbar(order = 1)   # <-- puts this legend first (on top)
   ) +
@@ -203,7 +203,7 @@ rich.all <- ggplot(
     guide = guide_legend(order = 2)      # <-- puts size legend below
   ) +
   geom_smooth(method = "glm", method.args = list(family = "quasibinomial"), color = "black") +
-  labs(x = "", y = "(Obs. Richness)/(Est. Richness)") +
+  labs(x = "", y = "(Observed richness)/(estimated richness)") +
   theme_minimal() +
   annotate("text", x = 0.22, y = 1, label = "a)", fontface = "bold")
 
@@ -218,12 +218,12 @@ div.all <- ggplot(
     guide = guide_legend(order = 2)   # only matters if you later show it
   ) +
   geom_smooth(method = "lm", color = "black") +
-  labs(x = "Mean Species Turnover", y = "(Obs. Diversity)/(Est. Diversity)") +
+  labs(x = "Mean species turnover", y = "(Observed diversity)/(estimated diversity)") +
   theme_minimal() +
   annotate("text", x = 0.22, y = 1.15, label = "b)", fontface = "bold") +
   scale_color_viridis_c(
     option = "D",
-    name = "Est. diversity",
+    name = "Estimated diversity",
     limits = div_limits,
     guide = guide_colorbar(order = 1)  # <-- puts color scale bar first
   ) 
@@ -250,7 +250,7 @@ rich.plot <-
   labs(x = "", y = "Richness") +
   annotate("text", x = 0, y = 300, label = "a)", size = 5, fontface = "bold") +
   theme_bw() + 
-  scale_color_viridis_c(option = "D", name = "Mean Turnover", limits = turnover_limits) +
+  scale_color_viridis_c(option = "D", name = "Mean turnover", limits = turnover_limits) +
   scale_alpha(range = c(0, 0.5), guide = "none") +
   theme(
     axis.title = element_text(size = 10),  
@@ -275,7 +275,7 @@ div.plot <-
                     ymax = Estimator.div + Est_s.e..div, 
                     color = turnover), width = 0, size = 2) + 
   geom_point(color = "black", size = 2) + 
-  labs(x = "Rank-order Observed Richness", y = "Diversity") +
+  labs(x = "Rank-order observed Richness", y = "Shannon diversity") +
   annotate("text", x = 0, y = 40, label = "b)", size = 5, fontface = "bold") +
   theme_bw() + 
   scale_color_viridis_c(option = "D", name = "Turnover", limits = turnover_limits) +
@@ -298,7 +298,7 @@ rich.prop <- ggplot(full.com, aes(x = years, y = prop.final.est.rich, color = tu
   geom_point(size = 3) +
   scale_x_continuous(breaks = c(2, 4,6, 8))+
   theme_minimal() +
-  labs(x = "", y = "(Obs. Richness)/(Est. Richness)") +
+  labs(x = "", y = "(Observed richness)/(estimated richness)") +
   geom_smooth(color = 'black') +
   annotate("text", x = 1, y = 1, label = "c)", size = 5, fontface = "bold") +
   theme(legend.position = "none") +
@@ -306,7 +306,7 @@ rich.prop <- ggplot(full.com, aes(x = years, y = prop.final.est.rich, color = tu
     axis.title = element_text(size = 10),  
     axis.text = element_text(size = 10),
     legend.position = "none",
-    plot.margin = unit(c(0, 0, 0, 0), "cm"),
+    plot.margin = unit(c(0.15, 0, 0, 0), "cm"),
     panel.spacing = unit(0, "cm")
   ) +
   scale_color_viridis_c(option = "D", name = "Turnover", limits = turnover_limits)
@@ -316,7 +316,7 @@ div.prop <- ggplot(full.com, aes(x = years, y = prop.final.est.div, color = turn
   geom_point(size = 3) +
   scale_x_continuous(breaks = c(2, 4,6, 8))+
   theme_minimal() +
-  labs(x = "Years of sampling", y = "(Obs. Diversity)/(Est. Diversity)") +
+  labs(x = "Years of sampling", y = "(Observed diversity)/(estimated diversity)") +
   annotate("text", x = 1, y = 1.35, label = "d)", size = 5, fontface = "bold") +
   geom_smooth(color = 'black') +
   theme(legend.position = "none") +
