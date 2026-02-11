@@ -174,6 +174,8 @@ for (i in 1:nrow(full)){
   full.com$obsRank[which(full.com$site==full$site[i])]<-full$obsRank[i]
 }
 
+#write.csv(full.com,c(datapath,"communityResults.csv"))
+
 
 ###### Threshold 
 
@@ -257,9 +259,4 @@ ylim.rich<-ceiling(max(full.com$Estimator.rich))
 xlim.div<-ceiling(max(thresh90.div$y.thresh))
 ylim.div<-ceiling(max(full.com$Estimator.div))
 
-
-
-# Save data
-write.csv(thresh90.rich,paste0(datapath,'richnessThresh.csv'),row.names=FALSE)
-write.csv(thresh90.div,paste0(datapath,'diversityThresh.csv'),row.names=FALSE)
 
