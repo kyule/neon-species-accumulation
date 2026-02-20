@@ -183,12 +183,6 @@ sd(thresh90.div$y.thresh)/sqrt(nrow(thresh90.div))
 cor.test(as.numeric(thresh90.rich$y.thresh),as.numeric(thresh90.rich$turnover))
 cor.test(as.numeric(thresh90.div$y.thresh),as.numeric(thresh90.div$turnover))
 
-# save threshold results
-
-write.csv(thresh90.rich,paste0(datapath,'richnessThresh.csv'),row.names=FALSE)
-write.csv(thresh90.div,paste0(datapath,'diversityThresh.csv'),row.names=FALSE)
-
-
 
 
 
